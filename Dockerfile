@@ -1,4 +1,4 @@
 FROM scratch
 EXPOSE 8080
-ENTRYPOINT ["/jenkins-x-spotbugs-reporter"]
+ENTRYPOINT ["/ext-jacoco"]
 COPY ./bin/ /

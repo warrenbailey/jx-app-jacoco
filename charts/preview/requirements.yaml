@@ -9,5 +9,5 @@ dependencies:
   repository: https://chartmuseum.build.cd.jenkins-x.io
   version: 2.3.56
 - alias: preview
-  name: jenkins-x-spotbugs-reporter
-  repository: file://../jenkins-x-spotbugs-reporter
+  name: ext-jacoco
+  repository: file://../ext-jacoco

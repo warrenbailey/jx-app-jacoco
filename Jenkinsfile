@@ -3,8 +3,8 @@ pipeline {
         label "jenkins-go"
     }
     environment {
-      ORG               = 'pmuir'
-      APP_NAME          = 'jenkins-x-spotbugs-reporter'
+      ORG               = 'jenkins-x'
+      APP_NAME          = 'ext-jacoco'
       GIT_PROVIDER      = 'github.com'
       CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
     }
@@ -19,7 +19,7 @@ pipeline {
           HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
         }
         steps {
-          dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter') {
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
             checkout scm
             container('go') {
               sh "make linux"
@@ -29,7 +29,7 @@ pipeline {
               sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
             }
           }
-          dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter/charts/preview') {
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/preview') {
             container('go') {
               sh "make preview"
               sh "jx preview --app $APP_NAME --dir ../.."
@@ -43,10 +43,10 @@ pipeline {
         }
         steps {
           container('go') {
-            dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter') {
+            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
               checkout scm
             }
-            dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter/charts/jenkins-x-spotbugs-reporter') {
+            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
                 // ensure we're not on a detached head
                 sh "git checkout master"
                 // until we switch to the new kubernetes / jenkins credential implementation use git credentials store
@@ -54,14 +54,14 @@ pipeline {
 
                 sh "jx step git credentials"
             }
-            dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter') {
+            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
               // so we can retrieve the version in later steps
               sh "echo \$(jx-release-version) > VERSION"
             }
-            dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter/charts/jenkins-x-spotbugs-reporter') {
+            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
               sh "make tag"
             }
-            dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter') {
+            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
               container('go') {
                 sh "make build"
                 sh 'export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml'
@@ -77,7 +77,7 @@ pipeline {
           branch 'master'
         }
         steps {
-          dir ('/home/jenkins/go/src/github.com/pmuir/jenkins-x-spotbugs-reporter/charts/jenkins-x-spotbugs-reporter') {
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
             container('go') {
               sh 'jx step changelog --version v\$(cat ../../VERSION)'
 
