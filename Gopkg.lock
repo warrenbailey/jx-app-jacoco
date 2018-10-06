@@ -93,7 +93,7 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
-  digest = "1:f7fbf8373c7489545b1e32b2c3f9bf586485671ea8fe12af60776fa2fbf643e3"
+  digest = "1:29b2a4935f1245d61bb1af23f7764b57e844a6ad4e120a68fd6e4a04cb4f96a0"
   name = "github.com/jenkins-x/jx"
   packages = [
     "pkg/apis/jenkins.io",
@@ -104,8 +104,8 @@
     "pkg/util",
   ]
   pruneopts = "UT"
-  revision = "af1fcb1bbfcc55c56d324a6fb81c83173af97819"
-  version = "v1.3.373"
+  revision = "9cd8dd09f61e5d3cb99cd4efed6a4c81930282e4"
+  version = "v1.3.374"
 
 [[projects]]
   digest = "1:3e551bbb3a7c0ab2a2bf4660e7fcad16db089fdcfbb44b0199e62838038623ea"

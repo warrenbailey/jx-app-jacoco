@@ -46,7 +46,7 @@ func watch() (err error) {
 		//
 		if act.Spec.Summaries.CodeCoverageAnalysis.Original.URL == "" {
 			for _, attachment := range act.Spec.Attachments {
-				if attachment.Name == "spotbugs" {
+				if attachment.Name == "jacoco" {
 					// TODO Handle having multiple attachments properly
 					for _, url := range attachment.URLs {
 						url = fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
