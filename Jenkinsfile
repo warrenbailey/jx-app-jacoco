@@ -63,9 +63,9 @@ pipeline {
             }
             dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
               container('go') {
+                sh 'export VERSION=`cat VERSION`
                 sh "make build"
-                sh 'export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml'
-
+                skaffold build -f skaffold.yaml'
                 sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
               }
             }
