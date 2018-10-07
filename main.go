@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jenkins-x/ext-jacoco-analyzer/jacoco"
+	"github.com/jenkins-x/ext-jacoco/jacoco"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsclientv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
