@@ -28,7 +28,7 @@ extensions:
   parameters:
   - name: provider
     description: The provider to use to publish Jacoco reports
-- name: jacocoMavenAnalyzer
+- name: jacocoAnalyzer
   namespace: jx
   uuid: c0deb7c8-c954-11e8-a8d5-f2801f1b9fd1
   description: Installs the analyzer microservice that summarises facts about the coverage
