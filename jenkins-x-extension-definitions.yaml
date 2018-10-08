@@ -4,13 +4,13 @@ extensions:
   uuid: 89cbaa0c-c954-11e8-a8d5-f2801f1b9fd1
   description: Runs Jacoco against a Maven project, attaches the output to the build, publishes the reports generated and summarises facts about the coverage to the build
   children:
-    - name: jacocoMavenAnalyzer
-      namespace: jx
-      uuid: c0deb7c8-c954-11e8-a8d5-f2801f1b9fd1
-    - name: jacocoMavenRun
-      namespace: jx
-    - name: jacocoMavenPublish
-      namespace: jx
+  - name: jacocoMavenAnalyzer
+    namespace: jx
+    uuid: c0deb7c8-c954-11e8-a8d5-f2801f1b9fd1
+  - name: jacocoMavenRun
+    namespace: jx
+  - name: jacocoMavenPublish
+    namespace: jx
 - name: jacocoMavenRun
   namespace: jx
   uuid: 9e5d0a9e-c7c7-11e8-a8d5-f2801f1b9fd1
