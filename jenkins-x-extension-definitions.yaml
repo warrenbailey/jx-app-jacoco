@@ -33,4 +33,5 @@ extensions:
   uuid: c0deb7c8-c954-11e8-a8d5-f2801f1b9fd1
   description: Installs the analyzer microservice that summarises facts about the coverage
   displayInCatalog: false
-  when: onInstall
+  when:
+  - onInstall
