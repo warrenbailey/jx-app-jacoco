@@ -40,4 +40,7 @@ spec:
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
         resources:
 {{ toYaml .Values.resources | indent 12 }}
+        env:
+          - name: TEAM_NAMESPACE
+            value: {{ default "jx" .Values.teamNamespace}}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
