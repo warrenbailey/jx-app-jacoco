@@ -38,3 +38,4 @@ extensions:
     value: jenkins-x-extensions
   when:
   - onInstall
+  - onUpgrade
