@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label "jenkins-go"
-    }
+    agent any
     environment {
       ORG               = 'jenkins-x'
       APP_NAME          = 'ext-jacoco'
@@ -21,19 +19,14 @@ pipeline {
         steps {
           dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
             checkout scm
-            container('go') {
-              sh "make linux"
-              sh 'export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml'
+            sh "make linux"
+            sh 'export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml'
 
-
-              sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
-            }
+            sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
           }
           dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/preview') {
-            container('go') {
-              sh "make preview"
-              sh "jx preview --app $APP_NAME --dir ../.."
-            }
+            sh "make preview"
+            sh "jx preview --app $APP_NAME --dir ../.."
           }
         }
       }
@@ -42,32 +35,28 @@ pipeline {
           branch 'master'
         }
         steps {
-          container('go') {
-            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
-              checkout scm
-            }
-            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
-                // ensure we're not on a detached head
-                sh "git checkout master"
-                // until we switch to the new kubernetes / jenkins credential implementation use git credentials store
-                sh "git config --global credential.helper store"
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
+            git 'https://github.com/jenkins-x/ext-jacoco'
+          }
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
+              // ensure we're not on a detached head
+              sh "git checkout master"
+              // until we switch to the new kubernetes / jenkins credential implementation use git credentials store
+              sh "git config --global credential.helper store"
 
-                sh "jx step git credentials"
-            }
-            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
-              // so we can retrieve the version in later steps
-              sh "echo \$(jx-release-version) > VERSION"
-            }
-            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
-              sh "make tag"
-            }
-            dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
-              container('go') {
-                sh "make build"
-                sh 'export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml'
-                sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
-              }
-            }
+              sh "jx step git credentials"
+          }
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
+            // so we can retrieve the version in later steps
+            sh "echo \$(jx-release-version) > VERSION"
+          }
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
+            sh "make tag"
+          }
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
+            sh "make build"
+            sh 'export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml'
+            sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           }
         }
       }
@@ -77,22 +66,15 @@ pipeline {
         }
         steps {
           dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
-            container('go') {
-              sh 'jx step changelog --version v\$(cat ../../VERSION)'
+            sh 'jx step changelog --version v\$(cat ../../VERSION)'
 
-              // release the helm chart
-              sh 'jx step helm release'
+            // release the helm chart
+            sh 'jx step helm release'
 
-              // promote through all 'Auto' promotion Environments
-              sh 'jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)'
-            }
+            // promote through all 'Auto' promotion Environments
+            sh 'jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)'
           }
         }
       }
-    }
-    post {
-        always {
-            cleanWs()
-        }
     }
   }
