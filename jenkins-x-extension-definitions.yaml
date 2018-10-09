@@ -31,6 +31,15 @@ extensions:
 - name: jacocoAnalyzer
   namespace: jx
   uuid: c0deb7c8-c954-11e8-a8d5-f2801f1b9fd1
+  description: The analyzer microservice that summarises facts about the coverage
+  displayInCatalog: false
+  children:
+  - name: jacocoAnalyzerInstall
+    namespace: jx
+  - name: jacocoAnalyzerUpgrade
+    namespace: jx
+- name: jacocoAnalyzerInstall
+  namespace: jx
   description: Installs the analyzer microservice that summarises facts about the coverage
   displayInCatalog: false
   parameters:
@@ -38,4 +47,12 @@ extensions:
     defaultValue: jenkins-x-extensions
   when:
   - onInstall
+- name: jacocoAnalyzerUpgrade
+  namespace: jx
+  description: Upgrades the analyzer microservice that summarises facts about the coverage
+  displayInCatalog: false
+  parameters:
+  - name: chartRepository
+    defaultValue: jenkins-x-extensions
+  when:
   - onUpgrade
