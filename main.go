@@ -114,5 +114,23 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	http.HandleFunc("/", handler)
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		panic(err.Error())
+	}
+}
 
+func handler(w http.ResponseWriter, r *http.Request) {
+	title := "Ready :-D"
+
+	from := ""
+	if r.URL != nil {
+		from = r.URL.String()
+	}
+	if from != "/favicon.ico" {
+		log.Printf("title: %s\n", title)
+	}
+
+	fmt.Fprintf(w, title+"\n")
 }
