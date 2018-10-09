@@ -35,7 +35,7 @@ extensions:
   displayInCatalog: false
   parameters:
   - name: chartRepository
-    value: jenkins-x-extensions
+    defaultValue: jenkins-x-extensions
   when:
   - onInstall
   - onUpgrade
