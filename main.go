@@ -24,7 +24,7 @@ func watch() (err error) {
 	if err != nil {
 		return err
 	}
-	ns := os.Getenv("TEAM_NAMESPACE")
+	ns := os.Getenv("EXT_TEAM_NAMESPACE")
 	client, err := jenkinsclientv1.NewForConfig(config)
 	if err != nil {
 		return err
