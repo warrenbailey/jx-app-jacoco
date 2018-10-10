@@ -69,7 +69,7 @@ pipeline {
           }
           dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
             // release the docker image
-            sh 'docker build -t docker.io/$ORG/$APP_NAME:\$(cat ../../VERSION) .'
+            sh 'docker build -t docker.io/$ORG/$APP_NAME:\$(cat VERSION) .'
             sh 'docker push docker.io/$ORG/$APP_NAME:\$(cat VERSION)'
             sh 'docker tag docker.io/$ORG/$APP_NAME:\$(cat VERSION) docker.io/$ORG/$APP_NAME:latest'
             sh 'docker push docker.io/$ORG/$APP_NAME:latest'
