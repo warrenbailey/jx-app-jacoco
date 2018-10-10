@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "fullname" . }}
+rules:
+- apiGroups:
+  - jenkins.io
+  resources:
+  - pipelineactivities
+  verbs:
+  - list

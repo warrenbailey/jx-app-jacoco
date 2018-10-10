@@ -44,3 +44,4 @@ spec:
           - name: TEAM_NAMESPACE
             value: {{ default "jx" .Values.teamNamespace}}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ template "fullname" . }}
