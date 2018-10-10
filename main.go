@@ -113,7 +113,7 @@ func parseReport(url string, httpClient *http.Client) (report jacoco.Report, err
 func main() {
 	err := watch()
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
 	}
 	http.HandleFunc("/", handler)
 	err = http.ListenAndServe(":8080", nil)
