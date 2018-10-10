@@ -56,5 +56,18 @@ pipeline {
           }
         }
       }
+      stage('Promote') {
+        when {
+          branch 'master'
+        }
+        steps {
+          dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco/charts/ext-jacoco') {
+            sh 'jx step changelog --version v\$(cat ../../VERSION)'
+
+            // release the helm chart
+            sh 'jx step helm release'
+          }
+        }
+      }
     }
   }
