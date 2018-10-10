@@ -75,7 +75,7 @@ pipeline {
             sh 'docker push docker.io/$ORG/$APP_NAME:latest'
 
             // Run updatebot to update other repos
-            sh 'updatebot push-regex -r \"\s+tag: (.*)\" -v ${VERSION} --previous-line \"\s+remote: github.com/${ORG}/${APP_NAME}\" vjenkins-x-extension-definitions.yaml'
+            sh './updatebot.sh'
           }
         }
       }
