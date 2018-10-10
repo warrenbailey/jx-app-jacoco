@@ -65,9 +65,9 @@ pipeline {
             sh 'jx step changelog --version v\$(cat ../../VERSION)'
 
             // release the docker image
-            sh 'docker build -t docker.io/$ORG/$APP_NAME:${VERSION} .'
-            sh 'docker push docker.io/$ORG/$APP_NAME:${VERSION}'
-            sh 'docker tag docker.io/$ORG/$APP_NAME:${VERSION} docker.io/$ORG/$APP_NAME:latest'
+            sh 'docker build -t docker.io/$ORG/$APP_NAME:\$(cat ../../VERSION) .'
+            sh 'docker push docker.io/$ORG/$APP_NAME:\$(cat ../../VERSION)'
+            sh 'docker tag docker.io/$ORG/$APP_NAME:\$(cat ../../VERSION) docker.io/$ORG/$APP_NAME:latest'
             sh 'docker push docker.io/$ORG/$APP_NAME:latest'
             // release the helm chart
             sh 'jx step helm release'
