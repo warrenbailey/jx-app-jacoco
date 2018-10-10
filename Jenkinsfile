@@ -73,6 +73,9 @@ pipeline {
             sh 'docker push docker.io/$ORG/$APP_NAME:\$(cat VERSION)'
             sh 'docker tag docker.io/$ORG/$APP_NAME:\$(cat VERSION) docker.io/$ORG/$APP_NAME:latest'
             sh 'docker push docker.io/$ORG/$APP_NAME:latest'
+
+            // Run updatebot to update other repos
+            sh './updatebot.sh'
           }
         }
       }
