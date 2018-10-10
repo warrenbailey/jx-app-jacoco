@@ -4,7 +4,7 @@
 replicaCount: 1
 image:
   repository: jenkinsxio/ext-jacoco
-  tag: dev
+  tag: 0.0.51
   pullPolicy: IfNotPresent
 service:
   name: ext-jacoco
