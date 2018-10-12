@@ -25,6 +25,9 @@ func watch() (err error) {
 		return err
 	}
 	ns := os.Getenv("TEAM_NAMESPACE")
+	if ns == "" {
+		ns = "jx"
+	}
 	log.Printf("Using namespace %s", ns)
 	client, err := jenkinsclientv1.NewForConfig(config)
 	if err != nil {
