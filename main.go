@@ -56,12 +56,17 @@ func watch() (err error) {
 					if err != nil {
 						log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
 					}
-					fact := jenkinsv1.Fact{}
+					found := make([]jenkinsv1.Fact, 0)
 					for _, f := range act.Spec.Facts {
 						if f.FactType == coverageFactName {
-							fact = f
+							found = append(found, f)
+							break
 						}
 					}
+					if len(found) > 1 {
+						return errors.New(fmt.Sprintf("More than one fact of kind %s found %s", coverageFactName, found))
+					}
+					fact := jenkinsv1.Fact{}
 					if fact.Name == "" {
 						fact.FactType = coverageFactName
 						fact.Original = jenkinsv1.Original{
