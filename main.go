@@ -18,8 +18,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const coverageFactName = "jenkins-x.coverage"
-
 func watch() (err error) {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
@@ -55,66 +53,64 @@ func watch() (err error) {
 					report, err := parseReport(url, httpClient)
 					if err != nil {
 						log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
-					}
-					found := make([]jenkinsv1.Fact, 0)
-					for _, f := range act.Spec.Facts {
-						if f.FactType == coverageFactName {
-							found = append(found, f)
-							break
+					} else {
+
+						measurements := make([]jenkinsv1.Measurement, 0)
+						for _, c := range report.Counters {
+							t := ""
+							switch c.Type {
+							case "INSTRUCTION":
+								t = jenkinsv1.CodeCoverageCountTypeInstructions
+							case "LINE":
+								t = jenkinsv1.CodeCoverageCountTypeLines
+							case "METHOD":
+								t = jenkinsv1.CodeCoverageCountTypeMethods
+							case "COMPLEXITY":
+								t = jenkinsv1.CodeCoverageCountTypeComplexity
+							case "BRANCH":
+								t = jenkinsv1.CodeCoverageCountTypeBranches
+							case "CLASS":
+								t = jenkinsv1.CodeCoverageCountTypeClasses
+							}
+							measurements = append(measurements, createMeasurement(t, jenkinsv1.CodeCoverageMeasurementCoverage, c.Covered), createMeasurement(t, jenkinsv1.CodeCoverageMeasurementMissed, c.Missed), createMeasurement(t, jenkinsv1.CodeCoverageMeasurementTotal, c.Covered+c.Missed))
 						}
-					}
-					if len(found) > 1 {
-						return errors.New(fmt.Sprintf("More than one fact of kind %s found %s", coverageFactName, found))
-					}
-					fact := jenkinsv1.Fact{}
-					if fact.Name == "" {
-						fact.FactType = coverageFactName
-						fact.Original = jenkinsv1.Original{
-							URL:      url,
-							MimeType: "application/xml",
-							Tags: []string{
-								"jacoco.xml",
+						fact := jenkinsv1.Fact{
+							FactType: jenkinsv1.FactTypeCoverage,
+							Original: jenkinsv1.Original{
+								URL:      url,
+								MimeType: "application/xml",
+								Tags: []string{
+									"jacoco.xml",
+								},
 							},
+							Tags: []string{
+								"jacoco",
+							},
+							Measurements: measurements,
 						}
-						fact.Tags = []string{
-							"jacoco",
+						found := 0
+						for i, f := range act.Spec.Facts {
+							if f.FactType == jenkinsv1.FactTypeCoverage {
+								act.Spec.Facts[i] = fact
+								found++
+							}
 						}
-						act.Spec.Facts = append(act.Spec.Facts, fact)
-					}
-					measurements := make([]jenkinsv1.Measurement, 0)
-					for _, c := range report.Counters {
-						measurements = append(measurements, createMeasurement(c.Type, jenkinsv1.CodeCoverageMeasurementCoverage, c.Covered), createMeasurement(c.Type, jenkinsv1.CodeCoverageMeasurementMissed, c.Missed), createMeasurement(c.Type, jenkinsv1.CodeCoverageMeasurementTotal, c.Covered+c.Missed))
-					}
-					fact.Measurements = measurements
-					act, err = client.PipelineActivities(act.Namespace).Update(act)
-					log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
-					if err != nil {
-						log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
+						if found > 1 {
+							return errors.New(fmt.Sprintf("More than one fact of kind %s found %d", jenkinsv1.FactTypeCoverage, found))
+						} else if found == 0 {
+							act.Spec.Facts = append(act.Spec.Facts, fact)
+						}
+						act, err = client.PipelineActivities(act.Namespace).Update(act)
+						log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
+						if err != nil {
+							log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
+						}
 					}
 				}
 			}
 		}
 	}
 	return nil
-}
-
-// Checks if all the elements of strings2 are present in strings1
-func contains(strings1 []string, strings2 []string) bool {
-	found := true
-	for _, s2 := range strings2 {
-		found2 := false
-		for _, s1 := range strings1 {
-			if s1 == s2 {
-				found2 = true
-				break
-			}
-		}
-		if !found2 {
-			found = false
-			break
-		}
-	}
-	return found
 }
 
 func parseReport(url string, httpClient *http.Client) (report jacoco.Report, err error) {

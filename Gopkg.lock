@@ -130,7 +130,7 @@
   revision = "9cad4c3443a7200dd6400aef47183728de563a38"
 
 [[projects]]
-  digest = "1:3acc366e02ae8d6c754b7a34f48d65b3f1ecb627159fb388806fbed1634560ef"
+  digest = "1:3a0e763a954de77a72d264bec32c2147f47d5700da02baec9978b8f3e8381027"
   name = "github.com/jenkins-x/jx"
   packages = [
     "pkg/apis/jenkins.io",
@@ -141,8 +141,8 @@
     "pkg/util",
   ]
   pruneopts = "UT"
-  revision = "5e6865d14b45c8672cf335e42c701d43e3fbe713"
-  version = "v1.3.414"
+  revision = "e95789ab0fda530cf656f2305c10abf6294ae61d"
+  version = "v1.3.421"
 
 [[projects]]
   digest = "1:3e551bbb3a7c0ab2a2bf4660e7fcad16db089fdcfbb44b0199e62838038623ea"
@@ -254,7 +254,7 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "7c1a557ab941a71c619514f229f0b27ccb0c27cf"
+  revision = "a92615f3c49003920a58dedcf32cf55022cefb8d"
 
 [[projects]]
   branch = "master"

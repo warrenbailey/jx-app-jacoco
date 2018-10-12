@@ -30,7 +30,7 @@
   unused-packages = true
 
 [[constraint]]
-  version = "1.3.414"
+  version = "1.3.421"
   name = "github.com/jenkins-x/jx"
 
 [[constraint]]
