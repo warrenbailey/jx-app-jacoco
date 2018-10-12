@@ -18,6 +18,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const coverageFactName = "jenkins-x.coverage"
+
 func watch() (err error) {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
@@ -44,50 +46,70 @@ func watch() (err error) {
 		if !ok {
 			log.Fatalf("unexpected type %s\n", event)
 		}
-		//
-		if act.Spec.Summaries.CodeCoverageAnalysis.Original.URL == "" {
-			for _, attachment := range act.Spec.Attachments {
-				if attachment.Name == "jacoco" {
-					// TODO Handle having multiple attachments properly
-					for _, url := range attachment.URLs {
-						url = fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
-						report, err := parseReport(url, httpClient)
-						if err != nil {
-							log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
-						}
 
-						counts := make(map[string]jenkinsv1.CodeCoverageAnalysisCount)
-						for _, c := range report.Counters {
-							counts[c.Type] = jenkinsv1.CodeCoverageAnalysisCount{
-								Coverage: c.Covered,
-								Missed:   c.Missed,
-								Total:    c.Covered + c.Missed,
-							}
+		for _, attachment := range act.Spec.Attachments {
+			if attachment.Name == "jacoco" {
+				// TODO Handle having multiple attachments properly
+				for _, url := range attachment.URLs {
+					url = fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
+					report, err := parseReport(url, httpClient)
+					if err != nil {
+						log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
+					}
+					fact := jenkinsv1.Fact{}
+					for _, f := range act.Spec.Facts {
+						if f.FactType == coverageFactName {
+							fact = f
 						}
-						act.Spec.Summaries.CodeCoverageAnalysis = jenkinsv1.CodeCoverageAnalysis{
-							Original: jenkinsv1.Original{
-								URL:      url,
-								MimeType: "application/xml",
-								Tags: []string{
-									"jacoco.xml",
-								},
-							},
+					}
+					if fact.Name == "" {
+						fact.FactType = coverageFactName
+						fact.Original = jenkinsv1.Original{
+							URL:      url,
+							MimeType: "application/xml",
 							Tags: []string{
-								"jacoco",
+								"jacoco.xml",
 							},
-							Counts: counts,
 						}
-						act, err = client.PipelineActivities(act.Namespace).Update(act)
-						log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
-						if err != nil {
-							log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
+						fact.Tags = []string{
+							"jacoco",
 						}
+						act.Spec.Facts = append(act.Spec.Facts, fact)
+					}
+					measurements := make([]jenkinsv1.Measurement, 0)
+					for _, c := range report.Counters {
+						measurements = append(measurements, createMeasurement(c.Type, jenkinsv1.CodeCoverageMeasurementCoverage, c.Covered), createMeasurement(c.Type, jenkinsv1.CodeCoverageMeasurementMissed, c.Missed), createMeasurement(c.Type, jenkinsv1.CodeCoverageMeasurementTotal, c.Covered+c.Missed))
+					}
+					fact.Measurements = measurements
+					act, err = client.PipelineActivities(act.Namespace).Update(act)
+					log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
+					if err != nil {
+						log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
 					}
 				}
 			}
 		}
 	}
 	return nil
+}
+
+// Checks if all the elements of strings2 are present in strings1
+func contains(strings1 []string, strings2 []string) bool {
+	found := true
+	for _, s2 := range strings2 {
+		found2 := false
+		for _, s1 := range strings1 {
+			if s1 == s2 {
+				found2 = true
+				break
+			}
+		}
+		if !found2 {
+			found = false
+			break
+		}
+	}
+	return found
 }
 
 func parseReport(url string, httpClient *http.Client) (report jacoco.Report, err error) {
@@ -134,4 +156,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, title+"\n")
+}
+
+func createMeasurement(t string, measurement string, value int) jenkinsv1.Measurement {
+	return jenkinsv1.Measurement{
+		Name:             fmt.Sprintf("%s-%s", t, measurement),
+		MeasurementType:  "percent",
+		MeasurementValue: value,
+	}
 }
