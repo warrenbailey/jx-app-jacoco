@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
       ORG               = 'jenkinsxio'
+      GITHUB_ORG        = 'jenkins-x'
       APP_NAME          = 'ext-jacoco'
       GIT_PROVIDER      = 'github.com'
       CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
