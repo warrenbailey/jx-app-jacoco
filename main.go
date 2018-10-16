@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -38,8 +39,12 @@ func watch() (err error) {
 		return err
 	}
 
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	var httpClient = &http.Client{
-		Timeout: time.Second * 10,
+		Transport: tr,
+		Timeout:   time.Second * 10,
 	}
 
 	for event := range watch.ResultChan() {
