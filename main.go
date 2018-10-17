@@ -75,7 +75,10 @@ func onPipelineActivityObj(obj interface{}, httpClient *http.Client, jxClient *j
 	if !ok {
 		log.Fatalf("unexpected type %s\n", obj)
 	} else {
-		log.Fatalln(onPipelineActivity(act, httpClient, jxClient))
+		err := onPipelineActivity(act, httpClient, jxClient)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 }
 
@@ -168,14 +171,12 @@ func parseReport(url string, httpClient *http.Client) (report jacoco.Report, err
 }
 
 func main() {
-	go func() {
-		err := actWatch()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	err := actWatch()
+	if err != nil {
+		log.Fatal(err)
+	}
 	http.HandleFunc("/", handler)
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		panic(err.Error())
 	}
