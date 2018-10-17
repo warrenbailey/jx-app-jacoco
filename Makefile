@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-GO := GO15VENDOREXPERIMENT=1 go
+GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
 NAME := ext-jacoco
 OS := $(shell uname)
 MAIN_GO := main.go
