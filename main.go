@@ -10,16 +10,19 @@ import (
 	"os"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/client-go/tools/cache"
+
 	"github.com/jenkins-x/ext-jacoco/jacoco"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsclientv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
-func watch() (err error) {
+func actWatch() (err error) {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -34,10 +37,6 @@ func watch() (err error) {
 	if err != nil {
 		return err
 	}
-	watch, err := client.PipelineActivities(ns).Watch(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -47,72 +46,99 @@ func watch() (err error) {
 		Timeout:   time.Second * 10,
 	}
 
-	for event := range watch.ResultChan() {
-		act, ok := event.Object.(*jenkinsv1.PipelineActivity)
-		if !ok {
-			log.Fatalf("unexpected type %s\n", event)
-		}
+	listWatch := cache.NewListWatchFromClient(client.RESTClient(), "pipelineactivities", ns, fields.Everything())
+	kube.SortListWatchByName(listWatch)
+	_, actController := cache.NewInformer(
+		listWatch,
+		&jenkinsv1.PipelineActivity{},
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				onPipelineActivityObj(obj, httpClient, client)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				onPipelineActivityObj(newObj, httpClient, client)
+			},
+			DeleteFunc: func(obj interface{}) {
 
-		for _, attachment := range act.Spec.Attachments {
-			if attachment.Name == "jacoco" {
-				// TODO Handle having multiple attachments properly
-				for _, url := range attachment.URLs {
-					url = fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
-					report, err := parseReport(url, httpClient)
-					if err != nil {
-						log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
-					} else {
+			},
+		},
+	)
+	stop := make(chan struct{})
+	go actController.Run(stop)
 
-						measurements := make([]jenkinsv1.Measurement, 0)
-						for _, c := range report.Counters {
-							t := ""
-							switch c.Type {
-							case "INSTRUCTION":
-								t = jenkinsv1.CodeCoverageCountTypeInstructions
-							case "LINE":
-								t = jenkinsv1.CodeCoverageCountTypeLines
-							case "METHOD":
-								t = jenkinsv1.CodeCoverageCountTypeMethods
-							case "COMPLEXITY":
-								t = jenkinsv1.CodeCoverageCountTypeComplexity
-							case "BRANCH":
-								t = jenkinsv1.CodeCoverageCountTypeBranches
-							case "CLASS":
-								t = jenkinsv1.CodeCoverageCountTypeClasses
-							}
-							measurements = append(measurements, createMeasurement(t, jenkinsv1.CodeCoverageMeasurementCoverage, c.Covered), createMeasurement(t, jenkinsv1.CodeCoverageMeasurementMissed, c.Missed), createMeasurement(t, jenkinsv1.CodeCoverageMeasurementTotal, c.Covered+c.Missed))
+	return nil
+}
+
+func onPipelineActivityObj(obj interface{}, httpClient *http.Client, jxClient *jenkinsclientv1.JenkinsV1Client) {
+	act, ok := obj.(*jenkinsv1.PipelineActivity)
+	if !ok {
+		log.Fatalf("unexpected type %s\n", obj)
+	} else {
+		log.Fatalln(onPipelineActivity(act, httpClient, jxClient))
+	}
+}
+
+func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *http.Client, jxClient *jenkinsclientv1.JenkinsV1Client) (err error) {
+	for _, attachment := range act.Spec.Attachments {
+		if attachment.Name == "jacoco" {
+			// TODO Handle having multiple attachments properly
+			for _, url := range attachment.URLs {
+				url = fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
+				report, err := parseReport(url, httpClient)
+				if err != nil {
+					log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
+				} else {
+
+					measurements := make([]jenkinsv1.Measurement, 0)
+					for _, c := range report.Counters {
+						t := ""
+						switch c.Type {
+						case "INSTRUCTION":
+							t = jenkinsv1.CodeCoverageCountTypeInstructions
+						case "LINE":
+							t = jenkinsv1.CodeCoverageCountTypeLines
+						case "METHOD":
+							t = jenkinsv1.CodeCoverageCountTypeMethods
+						case "COMPLEXITY":
+							t = jenkinsv1.CodeCoverageCountTypeComplexity
+						case "BRANCH":
+							t = jenkinsv1.CodeCoverageCountTypeBranches
+						case "CLASS":
+							t = jenkinsv1.CodeCoverageCountTypeClasses
 						}
-						fact := jenkinsv1.Fact{
-							FactType: jenkinsv1.FactTypeCoverage,
-							Original: jenkinsv1.Original{
-								URL:      url,
-								MimeType: "application/xml",
-								Tags: []string{
-									"jacoco.xml",
-								},
-							},
+						measurements = append(measurements, createMeasurement(t, jenkinsv1.CodeCoverageMeasurementCoverage, c.Covered), createMeasurement(t, jenkinsv1.CodeCoverageMeasurementMissed, c.Missed), createMeasurement(t, jenkinsv1.CodeCoverageMeasurementTotal, c.Covered+c.Missed))
+					}
+					fact := jenkinsv1.Fact{
+						FactType: jenkinsv1.FactTypeCoverage,
+						Original: jenkinsv1.Original{
+							URL:      url,
+							MimeType: "application/xml",
 							Tags: []string{
-								"jacoco",
+								"jacoco.xml",
 							},
-							Measurements: measurements,
+						},
+						Tags: []string{
+							"jacoco",
+						},
+						Measurements: measurements,
+					}
+					found := 0
+					for i, f := range act.Spec.Facts {
+						if f.FactType == jenkinsv1.FactTypeCoverage {
+							act.Spec.Facts[i] = fact
+							found++
 						}
-						found := 0
-						for i, f := range act.Spec.Facts {
-							if f.FactType == jenkinsv1.FactTypeCoverage {
-								act.Spec.Facts[i] = fact
-								found++
-							}
-						}
-						if found > 1 {
-							return errors.New(fmt.Sprintf("More than one fact of kind %s found %d", jenkinsv1.FactTypeCoverage, found))
-						} else if found == 0 {
-							act.Spec.Facts = append(act.Spec.Facts, fact)
-						}
-						act, err = client.PipelineActivities(act.Namespace).Update(act)
-						log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
-						if err != nil {
-							log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
-						}
+					}
+					if found > 1 {
+						return errors.New(fmt.Sprintf("More than one fact of kind %s found %d", jenkinsv1.FactTypeCoverage, found))
+					} else if found == 0 {
+						act.Spec.Facts = append(act.Spec.Facts, fact)
+					}
+					act, err = jxClient.PipelineActivities(act.Namespace).Update(act)
+					log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
+					if err != nil {
+						log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
 					}
 				}
 			}
@@ -143,7 +169,7 @@ func parseReport(url string, httpClient *http.Client) (report jacoco.Report, err
 
 func main() {
 	go func() {
-		err := watch()
+		err := actWatch()
 		if err != nil {
 			log.Fatal(err)
 		}
