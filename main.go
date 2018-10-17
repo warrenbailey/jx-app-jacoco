@@ -73,11 +73,11 @@ func actWatch() (err error) {
 func onPipelineActivityObj(obj interface{}, httpClient *http.Client, jxClient *jenkinsclientv1.JenkinsV1Client) {
 	act, ok := obj.(*jenkinsv1.PipelineActivity)
 	if !ok {
-		log.Fatalf("unexpected type %s\n", obj)
+		log.Printf("unexpected type %s\n", obj)
 	} else {
 		err := onPipelineActivity(act, httpClient, jxClient)
 		if err != nil {
-			log.Fatalln(err)
+			log.Print(err)
 		}
 	}
 }
