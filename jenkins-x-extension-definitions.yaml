@@ -44,7 +44,7 @@ extensions:
   displayInCatalog: false
   parameters:
   - name: chartRepository
-    defaultValue: jenkins-x-extensions
+    defaultValue: http://chartmuseum.jenkins-x.io
   when:
   - onInstall
 - name: jacocoAnalyzerUpgrade
@@ -53,6 +53,6 @@ extensions:
   displayInCatalog: false
   parameters:
   - name: chartRepository
-    defaultValue: jenkins-x-extensions
+    defaultValue: http://chartmuseum.jenkins-x.io
   when:
   - onUpgrade

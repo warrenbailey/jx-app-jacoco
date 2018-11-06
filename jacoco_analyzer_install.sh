@@ -1,3 +1,3 @@
 #!/bin/sh
-helm repo update
-helm install ${JX_JACOCO_ANALYZER_INSTALL_CHART_REPOSITORY}/ext-jacoco --version ${EXT_VERSION} --set teamNamespace=${EXT_TEAM_NAMESPACE} --name=ext-jacoco
+NAME=ext-jacoco
+helm install --repo ${JX_JACOCO_ANALYZER_INSTALL_CHART_REPOSITORY} ${NAME} --version ${EXT_VERSION} --set teamNamespace=${EXT_TEAM_NAMESPACE} --name=${NAME}
