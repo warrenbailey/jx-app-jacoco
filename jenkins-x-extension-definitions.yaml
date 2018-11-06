@@ -40,6 +40,7 @@ extensions:
     namespace: jx
 - name: jacocoAnalyzerInstall
   namespace: jx
+  uuid: 0f3f8598-e20d-11e8-9f32-f2801f1b9fd1§
   description: Installs the analyzer microservice that summarises facts about the coverage
   displayInCatalog: false
   parameters:
@@ -49,6 +50,7 @@ extensions:
   - onInstall
 - name: jacocoAnalyzerUpgrade
   namespace: jx
+  uuid: 09d0e976-e20d-11e8-9f32-f2801f1b9fd1
   description: Upgrades the analyzer microservice that summarises facts about the coverage
   displayInCatalog: false
   parameters:
@@ -56,3 +58,10 @@ extensions:
     defaultValue: http://chartmuseum.jenkins-x.io
   when:
   - onUpgrade
+- name: jacocoAnalyzerUninstall
+  namespace: jx
+  uuid: 00ca8fbc-e20d-11e8-9f32-f2801f1b9fd1
+  description: Uninstalls the analyzer microservice that summarises facts about the coverage
+  displayInCatalog: false
+  when:
+  - onUninstall
