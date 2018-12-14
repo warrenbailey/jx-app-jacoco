@@ -61,7 +61,7 @@ func actWatch() (err error) {
 	}
 
 	var httpClient = retryablehttp.NewClient()
-	httpClient.RetryWaitMin = 2
+	httpClient.RetryWaitMin = 2 * time.Second
 	httpClient.RetryMax = 5
 	httpClient.CheckRetry = retryPolicy
 
