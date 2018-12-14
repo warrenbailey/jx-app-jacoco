@@ -8,6 +8,13 @@ GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
 PKGS := $(shell go list ./... | grep -v /vendor | grep -v generated)
 PKGS := $(subst  :,_,$(PKGS))
+ifneq (,$(wildcard /etc/ssl/certs/ca-certificates.crt))
+	# jenkins-go
+	CERTS := /etc/ssl/certs/ca-certificates.crt
+ else ifneq (,$(wildcard /etc/ssl/certs/ca-bundle.crt))
+	# go devpod
+	CERTS := /etc/ssl/certs/ca-bundle.crt
+ endif
 BUILDFLAGS := ''
 CGO_ENABLED = 0
 VENDOR_DIR=vendor
@@ -34,7 +41,7 @@ fmt:
 clean:
 	rm -rf build release
 
-linux:
+linux: certs
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build -ldflags $(BUILDFLAGS) -o bin/$(NAME) $(MAIN_GO)
 
 .PHONY: release clean
@@ -64,5 +71,12 @@ lint: vendor | $(PKGS) $(GOLINT) # ❷
 watch:
 	reflex -r "\.go$" -R "vendor.*" make skaffold-run
 
-skaffold-run: build
+certs:
+	mkdir -p ./tmp
+	cp $(CERTS) ./tmp/ca-certificates.crt
+
+skaffold-build: certs
+	skaffold build -f skaffold.yaml
+
+skaffold-run: build certs
 	skaffold run -p dev

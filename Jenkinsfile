@@ -21,7 +21,7 @@ pipeline {
           dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
             checkout scm
             sh "make linux"
-            sh 'export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml'
+            sh 'export VERSION=$PREVIEW_VERSION && make skaffold-build'
 
             sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
           }
@@ -52,7 +52,7 @@ pipeline {
           }
           dir ('/home/jenkins/go/src/github.com/jenkins-x/ext-jacoco') {
             sh "make build"
-            sh 'export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml'
+            sh 'export VERSION=`cat VERSION` && make skaffold-build'
             sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           }
         }

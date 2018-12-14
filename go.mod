@@ -2,9 +2,11 @@ module github.com/jenkins-x/ext-jacoco
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/hashicorp/go-retryablehttp v0.5.0
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/jenkins-x/jx v1.3.445
 	github.com/json-iterator/go v1.1.5 // indirect
+	github.com/ogier/pflag v0.0.1 // indirect
 	github.com/pkg/errors v0.8.0
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e // indirect
 	golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1 // indirect

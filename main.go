@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/tls"
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -10,17 +10,39 @@ import (
 	"os"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/jenkins-x/ext-jacoco/jacoco"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/jenkins-x/ext-jacoco/jacoco"
-
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsclientv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
+
+// Retry policy retrying on 404
+func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	// do not retry on context.Canceled or context.DeadlineExceeded
+	if ctx.Err() != nil {
+		return false, ctx.Err()
+	}
+
+	if err != nil {
+		return true, err
+	}
+	// Check the response code. We retry on 500-range responses to allow
+	// the server time to recover, as 500's are typically not permanent
+	// errors and may relate to outages on the server side. This will catch
+	// invalid response codes as well, like 0 and 999.
+	if resp.StatusCode == 0 || resp.StatusCode == 404 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
+		return true, nil
+	}
+
+	return false, nil
+}
 
 func actWatch() (err error) {
 	// creates the in-cluster config
@@ -38,13 +60,10 @@ func actWatch() (err error) {
 		return err
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	var httpClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * 10,
-	}
+	var httpClient = retryablehttp.NewClient()
+	httpClient.RetryWaitMin = 2
+	httpClient.RetryMax = 5
+	httpClient.CheckRetry = retryPolicy
 
 	listWatch := cache.NewListWatchFromClient(client.RESTClient(), "pipelineactivities", ns, fields.Everything())
 	kube.SortListWatchByName(listWatch)
@@ -70,7 +89,7 @@ func actWatch() (err error) {
 	return nil
 }
 
-func onPipelineActivityObj(obj interface{}, httpClient *http.Client, jxClient *jenkinsclientv1.JenkinsV1Client) {
+func onPipelineActivityObj(obj interface{}, httpClient *retryablehttp.Client, jxClient *jenkinsclientv1.JenkinsV1Client) {
 	act, ok := obj.(*jenkinsv1.PipelineActivity)
 	if !ok {
 		log.Printf("unexpected type %s\n", obj)
@@ -82,7 +101,7 @@ func onPipelineActivityObj(obj interface{}, httpClient *http.Client, jxClient *j
 	}
 }
 
-func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *http.Client, jxClient *jenkinsclientv1.JenkinsV1Client) (err error) {
+func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *retryablehttp.Client, jxClient *jenkinsclientv1.JenkinsV1Client) (err error) {
 	for _, attachment := range act.Spec.Attachments {
 		if attachment.Name == "jacoco" {
 			// TODO Handle having multiple attachments properly
@@ -126,19 +145,24 @@ func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *http.Client
 						},
 						Measurements: measurements,
 					}
+					newAct, err := jxClient.PipelineActivities(act.Namespace).Get(act.Name, metav1.GetOptions{})
+					if err != nil {
+						log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
+						continue
+					}
 					found := 0
-					for i, f := range act.Spec.Facts {
+					for i, f := range newAct.Spec.Facts {
 						if f.FactType == jenkinsv1.FactTypeCoverage {
-							act.Spec.Facts[i] = fact
+							newAct.Spec.Facts[i] = fact
 							found++
 						}
 					}
 					if found > 1 {
 						return errors.New(fmt.Sprintf("More than one fact of kind %s found %d", jenkinsv1.FactTypeCoverage, found))
 					} else if found == 0 {
-						act.Spec.Facts = append(act.Spec.Facts, fact)
+						newAct.Spec.Facts = append(newAct.Spec.Facts, fact)
 					}
-					act, err = jxClient.PipelineActivities(act.Namespace).Update(act)
+					act, err = jxClient.PipelineActivities(newAct.Namespace).Update(newAct)
 					log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
 					if err != nil {
 						log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
@@ -150,7 +174,7 @@ func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *http.Client
 	return nil
 }
 
-func parseReport(url string, httpClient *http.Client) (report jacoco.Report, err error) {
+func parseReport(url string, httpClient *retryablehttp.Client) (report jacoco.Report, err error) {
 	response, err := httpClient.Get(url)
 	if err != nil {
 		return jacoco.Report{}, err
@@ -183,17 +207,6 @@ func main() {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	title := "Ready :-D"
-
-	from := ""
-	if r.URL != nil {
-		from = r.URL.String()
-	}
-	if from != "/favicon.ico" {
-		log.Printf("title: %s\n", title)
-	}
-
-	fmt.Fprintf(w, title+"\n")
 }
 
 func createMeasurement(t string, measurement string, value int) jenkinsv1.Measurement {
