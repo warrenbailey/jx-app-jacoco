@@ -1,3 +1,3 @@
 #!/bin/sh
-NAME=ext-jacoco
+NAME=jx-app-jacoco
 helm del --purge ${NAME}

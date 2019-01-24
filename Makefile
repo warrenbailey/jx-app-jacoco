@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
-NAME := ext-jacoco
+NAME := jx-app-jacoco
 OS := $(shell uname)
 MAIN_GO := main.go
 ROOT_PACKAGE := $(GIT_PROVIDER)/$(ORG)/$(NAME)

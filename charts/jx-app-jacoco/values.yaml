@@ -3,11 +3,11 @@
 # Declare variables to be passed into your templates.
 replicaCount: 1
 image:
-  repository: jenkinsxio/ext-jacoco
+  repository: draft
   tag: dev
   pullPolicy: IfNotPresent
 service:
-  name: ext-jacoco
+  name: jx-app-jacoco
   type: ClusterIP
   externalPort: 80
   internalPort: 8080
