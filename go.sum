@@ -100,6 +100,8 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i
 github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c/go.mod h1:SELxwZQq/mPnfPCR2mchLmT4TQaPJvYtLcCtDWSM7vM=
 github.com/jenkins-x/chyle v0.0.0-20180226080600-68f7a93a63ec/go.mod h1:3fkKXAgJpGvLAD+9v2cPUTSSLzO7of4/VkwgpEJSkXQ=
 github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135/go.mod h1:K/L25ViEpDx196rOZyjn433tAM5zr2F/IouK+3g+DkE=
+github.com/jenkins-x/ext-jacoco v0.0.82 h1:s7flRGXixxA1ngC6a/wjYmLI85ciLh5IRDjJ1AolSqY=
+github.com/jenkins-x/ext-jacoco v0.0.82/go.mod h1:pxo3I8Oka0DuN1XcF/7cYX4V9z5SZo1Wj5i0G/EkAiw=
 github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314/go.mod h1:C6j5HgwlHGjRU27W4XCs6jXksqYFo8OdBu+p44jqQeM=
 github.com/jenkins-x/jx v1.3.445 h1:/t/9jGfgVOqh2faq86rujJ9YiO9xP0EJuzUaJupvfj8=
 github.com/jenkins-x/jx v1.3.445/go.mod h1:c1MVnAxABOX1I+URmJDQfJvG4RZMZ4WmNiyJa+Tkw+o=
