@@ -76,7 +76,7 @@ pipeline {
             sh 'docker push docker.io/$ORG/$APP_NAME:latest'
 
             // Run updatebot to update other repos
-            sh './updatebot.sh'
+            sh './scripts/updatebot.sh'
           }
         }
       }

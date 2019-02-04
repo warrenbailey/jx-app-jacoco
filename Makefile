@@ -2,7 +2,7 @@ SHELL := /bin/bash
 GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
 NAME := jx-app-jacoco
 OS := $(shell uname)
-MAIN_GO := main.go
+MAIN_GO := cmd/jacoco/main.go
 ROOT_PACKAGE := $(GIT_PROVIDER)/$(ORG)/$(NAME)
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
@@ -40,7 +40,7 @@ fmt:
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
 clean:
-	rm -rf $(BUILD_DIR) 
+	rm -rf $(BUILD_DIR)
 
 linux: certs
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build -ldflags $(BUILDFLAGS) -o $(BUILD_DIR)/$(NAME) $(MAIN_GO)
