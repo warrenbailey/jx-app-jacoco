@@ -18,13 +18,14 @@ ifneq (,$(wildcard /etc/ssl/certs/ca-certificates.crt))
 BUILDFLAGS := ''
 CGO_ENABLED = 0
 VENDOR_DIR=vendor
+BUILD_DIR=build
 
 all: build
 
 check: fmt build test
 
 build:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -ldflags $(BUILDFLAGS) -o bin/$(NAME) $(MAIN_GO)
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -ldflags $(BUILDFLAGS) -o $(BUILD_DIR)/$(NAME) $(MAIN_GO)
 
 test: 
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v
@@ -39,12 +40,12 @@ fmt:
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
 clean:
-	rm -rf build release
+	rm -rf $(BUILD_DIR) 
 
 linux: certs
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build -ldflags $(BUILDFLAGS) -o bin/$(NAME) $(MAIN_GO)
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build -ldflags $(BUILDFLAGS) -o $(BUILD_DIR)/$(NAME) $(MAIN_GO)
 
-.PHONY: release clean
+.PHONY: clean
 
 FGT := $(GOPATH)/bin/fgt
 $(FGT):
