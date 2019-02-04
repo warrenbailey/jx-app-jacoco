@@ -5,7 +5,7 @@ build:
     envTemplate:
       template: "{{.DOCKER_REGISTRY}}/jenkins-x-apps/jx-app-jacoco:{{.VERSION}}"
   artifacts:
-  - imageName: changeme
+  - imageName: jenkins-x-apps/jx-app-jacoco
     workspace: .
     docker: {}
   local: {}
