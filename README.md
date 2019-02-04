@@ -15,9 +15,9 @@ $ jx add app -n "" jx-app-jacoco --repository "http://chartmuseum.jenkins-x.io"
 
 NOTE: The syntax of this command is evolving and will change.
 
-Upon successful installation, you should see jx-app-jacoco in the list of pods (`kubectel get pods`) running in your cluster - it will be called `jx-app-jacoco-jx-app-jacoco`.
+Upon successful installation, you should see jx-app-jacoco in the list of pods (`kubectl get pods`) running in your cluster - it will be called `jx-app-jacoco-jx-app-jacoco`.
                                                                                                         
-NOTE: The name repetition is a common pattern in Helm.
+NOTE: The name repetition is a typical pattern in Helm.
 
 ## Usage
 
@@ -59,7 +59,7 @@ Example Maven POM file:
 ```
 NOTE: We have an open issue to not have to generate the XML report in the project.
 
-Ensure that your Jenkinsfile includes the following command so the Jacoco XML report is collected.
+Ensure that your Jenkinsfile includes the following command, so the Jacoco XML report is collected.
 
 ```bash
 sh "jx step collect --pattern=target/site/jacoco/jacoco.xml --classifier=jacoco"
@@ -128,3 +128,39 @@ measurements:
   measurementValue: 2
   name: Classes-Total
 ```
+
+## Building from source
+
+The following paragraphs describe how to build and work with the source.
+
+### Prerequisites
+
+The project is written in [Go](https://golang.org/), so you will need a working Go installation (Go version >= 1.11.4).
+
+The build itself is driven by GNU [Make](https://www.gnu.org/software/make/) which also needs to be installed on your system.
+
+### Compile the code
+
+```bash
+$ make build
+```
+
+After successful compilation the `jx-app-jacoco` binary can be found in the `bin` directory.
+
+### Run the tests
+
+```bash   
+$ make test
+```
+
+### Cleanup
+
+```bash   
+$ make clean
+```
+
+## How to contribute
+
+If you want to contribute, make sure to follow the [contribution guidelines](./CONTRIBUTING.md) when you open issues or submit pull requests.
+
+You find all the information you need to get coding in the [Development](./docs/development.md) documentation.
