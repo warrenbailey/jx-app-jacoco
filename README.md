@@ -10,7 +10,7 @@ If you do not have a Jenkins X cluster and you would like to try it out, the [Je
 Using the [jx command line tool](https://jenkins-x.io/getting-started/install/), run the following command:
 
 ```bash
-$ jx add app -n "" jx-app-jacoco --repository "http://chartmuseum.jenkins-x.io"
+$ jx add app jx-app-jacoco --repository "http://chartmuseum.jenkins-x.io"
 ```
 
 NOTE: The syntax of this command is evolving and will change.
