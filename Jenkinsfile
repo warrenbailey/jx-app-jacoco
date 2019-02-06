@@ -20,7 +20,7 @@ pipeline {
         steps {
           dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
             checkout scm
-            sh "make linux"
+            sh "make linux test check"
             sh 'export VERSION=$PREVIEW_VERSION && make skaffold-build'
 
             sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
@@ -51,7 +51,7 @@ pipeline {
             sh "make tag"
           }
           dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
-            sh "make linux"
+            sh "make linux test check"
             sh 'export VERSION=`cat VERSION` && make skaffold-build'
             sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           }

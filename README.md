@@ -53,7 +53,6 @@ Example Maven POM file:
            </execution>
         </executions>
      </plugin>
-  <plugin>
  </plugins>
 </build>
 ```
@@ -142,7 +141,7 @@ The build itself is driven by GNU [Make](https://www.gnu.org/software/make/) whi
 ### Compile the code
 
 ```bash
-$ make build
+$ make linux
 ```
 
 After successful compilation the `jx-app-jacoco` binary can be found in the `bin` directory.
@@ -162,5 +161,3 @@ $ make clean
 ## How to contribute
 
 If you want to contribute, make sure to follow the [contribution guidelines](./CONTRIBUTING.md) when you open issues or submit pull requests.
-
-You find all the information you need to get coding in the [Development](./docs/development.md) documentation.

@@ -1,17 +1,13 @@
 package main
 
 import (
-	"context"
-	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"github.com/jenkins-x-apps/jx-app-jacoco/internal/report"
+	"github.com/jenkins-x-apps/jx-app-jacoco/internal/util"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/jenkins-x-apps/jx-app-jacoco/internal"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -23,25 +19,16 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// Retry policy retrying on 404
-func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
-	// do not retry on context.Canceled or context.DeadlineExceeded
-	if ctx.Err() != nil {
-		return false, ctx.Err()
-	}
-
+func main() {
+	err := actWatch()
 	if err != nil {
-		return true, err
+		log.Fatal(err)
 	}
-	// Check the response code. We retry on 500-range responses to allow
-	// the server time to recover, as 500's are typically not permanent
-	// errors and may relate to outages on the server side. This will catch
-	// invalid response codes as well, like 0 and 999.
-	if resp.StatusCode == 0 || resp.StatusCode == 404 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
-		return true, nil
+	http.HandleFunc("/", handler)
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		panic(err.Error())
 	}
-
-	return false, nil
 }
 
 func actWatch() (err error) {
@@ -50,22 +37,13 @@ func actWatch() (err error) {
 	if err != nil {
 		return err
 	}
-	ns := os.Getenv("TEAM_NAMESPACE")
-	if ns == "" {
-		ns = "jx"
-	}
-	log.Printf("Using namespace %s", ns)
+
 	client, err := jenkinsclientv1.NewForConfig(config)
 	if err != nil {
 		return err
 	}
 
-	var httpClient = retryablehttp.NewClient()
-	httpClient.RetryWaitMin = 2 * time.Second
-	httpClient.RetryMax = 5
-	httpClient.CheckRetry = retryPolicy
-
-	listWatch := cache.NewListWatchFromClient(client.RESTClient(), "pipelineactivities", ns, fields.Everything())
+	listWatch := cache.NewListWatchFromClient(client.RESTClient(), "pipelineactivities", util.TeamNameSpace(), fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, actController := cache.NewInformer(
 		listWatch,
@@ -73,14 +51,12 @@ func actWatch() (err error) {
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				onPipelineActivityObj(obj, httpClient, client)
+				onPipelineActivityObj(obj, client)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				onPipelineActivityObj(newObj, httpClient, client)
+				onPipelineActivityObj(newObj, client)
 			},
-			DeleteFunc: func(obj interface{}) {
-
-			},
+			DeleteFunc: func(obj interface{}) {},
 		},
 	)
 	stop := make(chan struct{})
@@ -89,29 +65,28 @@ func actWatch() (err error) {
 	return nil
 }
 
-func onPipelineActivityObj(obj interface{}, httpClient *retryablehttp.Client, jxClient *jenkinsclientv1.JenkinsV1Client) {
+func onPipelineActivityObj(obj interface{}, jxClient *jenkinsclientv1.JenkinsV1Client) {
 	act, ok := obj.(*jenkinsv1.PipelineActivity)
 	if !ok {
 		log.Printf("unexpected type %s\n", obj)
 	} else {
-		err := onPipelineActivity(act, httpClient, jxClient)
+		err := onPipelineActivity(act, jxClient)
 		if err != nil {
 			log.Print(err)
 		}
 	}
 }
 
-func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *retryablehttp.Client, jxClient *jenkinsclientv1.JenkinsV1Client) (err error) {
+func onPipelineActivity(act *jenkinsv1.PipelineActivity, jxClient *jenkinsclientv1.JenkinsV1Client) (err error) {
 	for _, attachment := range act.Spec.Attachments {
 		if attachment.Name == "jacoco" {
 			// TODO Handle having multiple attachments properly
 			for _, url := range attachment.URLs {
 				url = fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
-				report, err := parseReport(url, httpClient)
+				report, err := report.RetrieveReport(url)
 				if err != nil {
 					log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
 				} else {
-
 					measurements := make([]jenkinsv1.Measurement, 0)
 					for _, c := range report.Counters {
 						t := ""
@@ -144,6 +119,7 @@ func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *retryableht
 							"jacoco",
 						},
 						Measurements: measurements,
+						Statements:   []jenkinsv1.Statement{},
 					}
 					newAct, err := jxClient.PipelineActivities(act.Namespace).Get(act.Name, metav1.GetOptions{})
 					if err != nil {
@@ -172,38 +148,6 @@ func onPipelineActivity(act *jenkinsv1.PipelineActivity, httpClient *retryableht
 		}
 	}
 	return nil
-}
-
-func parseReport(url string, httpClient *retryablehttp.Client) (report jacoco.Report, err error) {
-	response, err := httpClient.Get(url)
-	if err != nil {
-		return jacoco.Report{}, err
-	}
-	if response.StatusCode > 299 || response.StatusCode < 200 {
-		return jacoco.Report{}, errors.New(fmt.Sprintf("Status code: %d, error: %s", response.StatusCode, response.Status))
-	}
-	body, err := ioutil.ReadAll(response.Body)
-	defer response.Body.Close()
-	if err != nil {
-		return jacoco.Report{}, err
-	}
-	err = xml.Unmarshal(body, &report)
-	if err != nil {
-		return report, err
-	}
-	return report, nil
-}
-
-func main() {
-	err := actWatch()
-	if err != nil {
-		log.Fatal(err)
-	}
-	http.HandleFunc("/", handler)
-	err = http.ListenAndServe(":8080", nil)
-	if err != nil {
-		panic(err.Error())
-	}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
