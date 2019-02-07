@@ -62,21 +62,23 @@ pipeline {
           branch 'master'
         }
         steps {
-          dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco/charts/jx-app-jacoco') {
-            sh 'jx step changelog --version v\$(cat ../../VERSION)'
-
-            // release the helm chart
-            sh 'jx step helm release'
-          }
           dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
             // release the docker image
             sh 'docker build -t docker.io/$ORG/$APP_NAME:\$(cat VERSION) .'
             sh 'docker push docker.io/$ORG/$APP_NAME:\$(cat VERSION)'
             sh 'docker tag docker.io/$ORG/$APP_NAME:\$(cat VERSION) docker.io/$ORG/$APP_NAME:latest'
             sh 'docker push docker.io/$ORG/$APP_NAME:latest'
-
+          }
+          dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco/charts/jx-app-jacoco') {
+            // release the helm chart
+            sh 'jx step helm release'
+          }
+          dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
+            sh 'jx step changelog --version v\$(cat VERSION)'
+          }
+          dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco/scripts') {
             // Run updatebot to update other repos
-            sh './scripts/updatebot.sh'
+            sh './updatebot.sh'
           }
         }
       }
