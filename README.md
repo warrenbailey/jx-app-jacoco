@@ -59,17 +59,17 @@ Example Maven POM file:
 ```
 NOTE: We have an open issue to not have to generate the XML report in the project.
 
-Ensure that your Jenkinsfile includes the following command, so the Jacoco XML report is collected.
+Ensure that your _Jenkinsfile_ includes the following command, so the Jacoco XML report is stored for later retrieval by this app.
 
 ```bash
-sh "jx step collect --pattern=target/site/jacoco/jacoco.xml --classifier=jacoco"
+sh "jx step stash --pattern=target/site/jacoco/jacoco.xml --classifier=jacoco"
 ```
 
 Example JenkinsFile build steps:
 
 ```bash
 sh "mvn install"
-sh "jx step collect --pattern=target/site/jacoco/jacoco.xml --classifier=jacoco"
+sh "jx step stash --pattern=target/site/jacoco/jacoco.xml --classifier=jacoco"
 ```
 
 Jacoco code coverage facts will now be stored in the PipelineActivity custom resource for each build.
