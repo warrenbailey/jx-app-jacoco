@@ -77,7 +77,7 @@ pipeline {
 
             // Run updatebot to update other repos
             sh './scripts/updatebot.sh'
-            sh 'jx step create version pr -n $ORG/$APP_NAME -v $(cat VERSION)'
+            sh 'jx step create version pr -n $GITHUB_ORG/$APP_NAME -v $(cat VERSION)'
           }
         }
       }
