@@ -51,7 +51,7 @@ pipeline {
             sh "make tag"
           }
           dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
-            sh "make build"
+            sh "make linux"
             sh 'export VERSION=`cat VERSION` && make skaffold-build'
             sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           }

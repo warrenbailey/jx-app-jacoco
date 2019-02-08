@@ -1,72 +1,67 @@
 SHELL := /bin/bash
-GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
-NAME := jx-app-jacoco
-OS := $(shell uname)
-MAIN_GO := cmd/jacoco/main.go
-ROOT_PACKAGE := $(GIT_PROVIDER)/$(ORG)/$(NAME)
-GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
-PKGS := $(shell go list ./... | grep -v /vendor | grep -v generated)
-PKGS := $(subst  :,_,$(PKGS))
+
+GO_VARS := GO111MODULE=on GO15VENDOREXPERIMENT=1 CGO_ENABLED=0
 BUILDFLAGS := ''
-CGO_ENABLED = 0
-VENDOR_DIR=vendor
+
+APP_NAME := jx-app-jacoco
+MAIN := cmd/jacoco/main.go
+
 BUILD_DIR=build
+PACKAGE_DIRS := $(shell go list ./...)
+PKGS := $(subst  :,_,$(PACKAGE_DIRS))
+PLATFORMS := windows linux darwin
+os = $(word 1, $@)
 
-all: build
+# setting some defaults for skaffold 
+DOCKER_REGISTRY ?= localhost:5000
+VERSION ?= latest
 
-check: fmt build test
+.PHONY : all
+all: linux test check ## Compiles, test and verifies source
 
-build:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -ldflags $(BUILDFLAGS) -o $(BUILD_DIR)/$(NAME) $(MAIN_GO)
+.PHONY: $(PLATFORMS)
+$(PLATFORMS):	
+	$(GO_VARS) GOOS=$(os) GOARCH=amd64 go build -ldflags $(BUILDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(MAIN)
 
-test: 
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v
+.PHONY : test
+test: ## Runs unit tests
+	$(GO_VARS) go test -v $(PACKAGE_DIRS) 
 
-full: $(PKGS)
+.PHONY : fmt
+fmt: ## Re-formates Go source files according to standard
+	@$(GO_VARS) go fmt $(PACKAGE_DIRS)
 
-install:
-	GOBIN=${GOPATH}/bin $(GO) install -ldflags $(BUILDFLAGS) $(MAIN_GO)
-
-fmt:
-	@FORMATTED=`$(GO) fmt $(PACKAGE_DIRS)`
-	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
-
-clean:
+.PHONY : clean
+clean: ## Deletes the build directory with all generated artefacts
 	rm -rf $(BUILD_DIR)
 
-linux:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build -ldflags $(BUILDFLAGS) -o $(BUILD_DIR)/$(NAME) $(MAIN_GO)
+check: $(GOLINT) $(FGT)
+	@echo "LINTING"
+	@$(FGT) $(GOLINT) $(PACKAGE_DIRS)
+	@echo "VETTING"
+	@$(GO_VARS) $(FGT) go vet $(PACKAGE_DIRS)
 
-.PHONY: clean
+.PHONY: watch
+watch: ## Watches for file changes in Go source files and re-runs 'skaffold build'. Requires entr
+	find . -name "*.go" | entr -s 'make skaffold-build' 
 
+.PHONY: skaffold-build
+skaffold-build: linux ## Runs 'skaffold build'
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold build -f skaffold.yaml
+
+.PHONY: skaffold-run
+skaffold-run: linux ## Runs 'skaffold run'
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold run -f skaffold.yaml -p dev 
+
+.PHONY: help
+help: ## Prints this help
+	@grep -E '^[^.]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-40s\033[0m %s\n", $$1, $$2}'	
+
+# Targets to get some Go tools
 FGT := $(GOPATH)/bin/fgt
 $(FGT):
 	go get github.com/GeertJohan/fgt
 
 GOLINT := $(GOPATH)/bin/golint
 $(GOLINT):
-	go get github.com/golang/lint/golint
-
-$(PKGS): $(GOLINT) $(FGT)
-	@echo "LINTING"
-	@$(FGT) $(GOLINT) $(GOPATH)/src/$@/*.go
-	@echo "VETTING"
-	@go vet -v $@
-	@echo "TESTING"
-	@go test -v $@
-
-.PHONY: lint
-lint: vendor | $(PKGS) $(GOLINT) # ❷
-	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
-	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
-	done ; exit $$ret
-
-watch:
-	reflex -r "\.go$" -R "vendor.*" make skaffold-run
-
-skaffold-build:
-	skaffold build -f skaffold.yaml
-
-skaffold-run: build
-	skaffold run -p dev
+	go get github.com/golang/lint/golint	
