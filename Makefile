@@ -16,6 +16,9 @@ os = $(word 1, $@)
 DOCKER_REGISTRY ?= localhost:5000
 VERSION ?= latest
 
+FGT := $(GOPATH)/bin/fgt
+GOLINT := $(GOPATH)/bin/golint
+
 .PHONY : all
 all: linux test check ## Compiles, test and verifies source
 
@@ -58,10 +61,8 @@ help: ## Prints this help
 	@grep -E '^[^.]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-40s\033[0m %s\n", $$1, $$2}'	
 
 # Targets to get some Go tools
-FGT := $(GOPATH)/bin/fgt
 $(FGT):
-	go get github.com/GeertJohan/fgt
+	@$(GO_VARS) go get github.com/GeertJohan/fgt
 
-GOLINT := $(GOPATH)/bin/golint
 $(GOLINT):
-	go get github.com/golang/lint/golint	
+	@$(GO_VARS) go get github.com/golang/lint/golint

@@ -2,11 +2,13 @@ module github.com/jenkins-x-apps/jx-app-jacoco
 
 require (
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
+	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.2
 	github.com/jenkins-x/jx v1.3.844
 	github.com/magiconair/properties v1.8.0
 	github.com/pkg/errors v0.8.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5 // indirect
+	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/viper v1.3.1 // indirect
 	github.com/stretchr/testify v1.3.0
 	k8s.io/api v0.0.0-20190126160303-ccdd560a045f

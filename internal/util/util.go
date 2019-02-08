@@ -1,9 +1,11 @@
 package util
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 )
+
+var logger = log.WithFields(log.Fields{"app": "jacoco"})
 
 const namespaceKey = "TEAM_NAMESPACE"
 const defaultNameSpace = "jx"
@@ -15,6 +17,6 @@ func TeamNameSpace() string {
 	if ns == "" {
 		ns = defaultNameSpace
 	}
-	log.Printf("Using namespace %s", ns)
+	logger.Infof("Using namespace %s", ns)
 	return ns
 }

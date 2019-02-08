@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/jenkins-x-apps/jx-app-jacoco/internal/report"
 	"github.com/jenkins-x-apps/jx-app-jacoco/internal/util"
-	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -15,14 +15,23 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsclientv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
+var logger = log.WithFields(log.Fields{"app": "jacoco"})
+
+func init() {
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	log.SetOutput(os.Stdout)
+}
+
 func main() {
 	err := actWatch()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	http.HandleFunc("/", handler)
 	err = http.ListenAndServe(":8080", nil)
@@ -68,11 +77,11 @@ func actWatch() (err error) {
 func onPipelineActivityObj(obj interface{}, jxClient *jenkinsclientv1.JenkinsV1Client) {
 	act, ok := obj.(*jenkinsv1.PipelineActivity)
 	if !ok {
-		log.Printf("unexpected type %s\n", obj)
+		logger.Warnf("unexpected type %T", obj)
 	} else {
 		err := onPipelineActivity(act, jxClient)
 		if err != nil {
-			log.Print(err)
+			logger.Error(err)
 		}
 	}
 }
@@ -85,7 +94,7 @@ func onPipelineActivity(act *jenkinsv1.PipelineActivity, jxClient *jenkinsclient
 				url = fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
 				report, err := report.RetrieveReport(url)
 				if err != nil {
-					log.Println(errors.Wrap(err, fmt.Sprintf("Unable to retrieve %s for processing", url)))
+					logger.Errorf("unable to retrieve %s for processing: %s", url, err)
 				} else {
 					measurements := make([]jenkinsv1.Measurement, 0)
 					for _, c := range report.Counters {
@@ -123,7 +132,7 @@ func onPipelineActivity(act *jenkinsv1.PipelineActivity, jxClient *jenkinsclient
 					}
 					newAct, err := jxClient.PipelineActivities(act.Namespace).Get(act.Name, metav1.GetOptions{})
 					if err != nil {
-						log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
+						logger.Errorf("error updating PipelineActivity %s: %s", act.Name, err)
 						continue
 					}
 					found := 0
@@ -134,14 +143,14 @@ func onPipelineActivity(act *jenkinsv1.PipelineActivity, jxClient *jenkinsclient
 						}
 					}
 					if found > 1 {
-						return errors.New(fmt.Sprintf("More than one fact of kind %s found %d", jenkinsv1.FactTypeCoverage, found))
+						return errors.New(fmt.Sprintf("more than one fact of kind %s found %d", jenkinsv1.FactTypeCoverage, found))
 					} else if found == 0 {
 						newAct.Spec.Facts = append(newAct.Spec.Facts, fact)
 					}
 					act, err = jxClient.PipelineActivities(newAct.Namespace).Update(newAct)
-					log.Printf("Updated PipelineActivity %s with data from %s\n", act.Name, url)
+					logger.Infof("successfully updated PipelineActivity %s with data from %s", act.Name, url)
 					if err != nil {
-						log.Println(errors.Wrap(err, fmt.Sprintf("Error updating PipelineActivity %s", act.Name)))
+						logger.Errorf("error updating PipelineActivity %s: %s", act.Name, err)
 					}
 				}
 			}
