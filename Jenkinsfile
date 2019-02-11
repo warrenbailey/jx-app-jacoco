@@ -75,7 +75,8 @@ pipeline {
           }
           dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
             sh 'jx step changelog --version v\$(cat VERSION)'
-            sh 'jx step create version pr -n $GITHUB_ORG/$APP_NAME -v $(cat VERSION)'
+            // disabling 'jx create version pr' until builder images contains this command (HF)
+            // sh 'jx step create version pr -n $GITHUB_ORG/$APP_NAME -v $(cat VERSION)'
           }
         }
       }

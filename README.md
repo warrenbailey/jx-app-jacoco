@@ -152,11 +152,36 @@ After successful compilation the `jx-app-jacoco` binary can be found in the `bin
 $ make test
 ```
 
+### Check formatting
+
+```bash   
+$ make check
+```
+
 ### Cleanup
 
 ```bash   
 $ make clean
 ```
+
+### Testing a development version of the app
+
+* Install a JenkinsX dev cluster - see [`jx cluster create`](https://jenkins-x.io/getting-started/install/)
+* Install the latest jacoco app 
+   ```bash
+   $ jx add app jx-app-jacoco --repository "http://chartmuseum.jenkins-x.io"
+   ```
+* Start a synced DevPod from your checked out sources - [Using Jenkins X DevPods](https://jenkins.io/blog/2018/06/21/jenkins-x-devpods/)
+* In the DevPod
+   ```bash
+   $ make skaffold-build VERSION=<your-dev-version>
+   ```
+* Locally patch the currently deployed image
+   ```bash
+   $ export VERSION=<your-dev-version>
+   $ export DOCKER_REGISTRY=`kubectl get service jenkins-x-docker-registry -o go-template --template="{{.spec.clusterIP}}"`:5000
+   $ kubectl patch deployment jx-app-jacoco-jx-app-jacoco --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"'$DOCKER_REGISTRY'/jenkins-x-apps/jx-app-jacoco:'$VERSION'"}]'
+   ```
 
 ## How to contribute
 
