@@ -1,6 +1,7 @@
 module github.com/jenkins-x-apps/jx-app-jacoco
 
 require (
+	github.com/cenkalti/backoff v2.0.0+incompatible
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.2
