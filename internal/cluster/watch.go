@@ -21,7 +21,7 @@ var (
 )
 
 // WatchPipelineActivity watches the jx namespace for changes to PipelineActivities.
-func WatchPipelineActivity(namespace string, jxClient *jenkinsclientv1.JenkinsV1Client) {
+func WatchPipelineActivity(done chan struct{}, namespace string, jxClient *jenkinsclientv1.JenkinsV1Client) {
 	listWatch := cache.NewListWatchFromClient(jxClient.RESTClient(), "pipelineactivities", namespace, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, actController := cache.NewInformer(
@@ -38,8 +38,7 @@ func WatchPipelineActivity(namespace string, jxClient *jenkinsclientv1.JenkinsV1
 			DeleteFunc: func(obj interface{}) {},
 		},
 	)
-	stop := make(chan struct{})
-	go actController.Run(stop)
+	go actController.Run(done)
 }
 
 func onPipelineActivity(obj interface{}, jxClient *jenkinsclientv1.JenkinsV1Client) {
