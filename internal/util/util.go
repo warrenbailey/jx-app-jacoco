@@ -1,14 +1,17 @@
 package util
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/cenkalti/backoff"
 	"os"
+	"time"
 )
 
-var logger = log.WithFields(log.Fields{"app": "jacoco"})
+const (
+	namespaceKey     = "TEAM_NAMESPACE"
+	defaultNameSpace = "jx"
+)
 
-const namespaceKey = "TEAM_NAMESPACE"
-const defaultNameSpace = "jx"
+var timeout = 60 * time.Second
 
 // TeamNameSpace returns the current namespace which is either defined by the TEAM_NAMESPACE environment variable or
 // defaulted to 'jx'.
@@ -17,6 +20,25 @@ func TeamNameSpace() string {
 	if ns == "" {
 		ns = defaultNameSpace
 	}
-	logger.Infof("Using namespace %s", ns)
 	return ns
+}
+
+// Contains checks whether the specified string is contained in the given string slice.
+// Returns true if it does, false otherwise
+func Contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+// ApplyWithBackoff tries to apply the specified function using an exponential backoff algorithm.
+// If the function eventually succeed nil is returned, otherwise the error returned by f.
+func ApplyWithBackoff(f func() error) error {
+	exponentialBackOff := backoff.NewExponentialBackOff()
+	exponentialBackOff.MaxElapsedTime = timeout
+	exponentialBackOff.Reset()
+	return backoff.Retry(f, exponentialBackOff)
 }
