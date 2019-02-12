@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	"github.com/jenkins-x-apps/jx-app-jacoco/internal/report"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -77,6 +78,7 @@ func TestUpdatePipelineUpdateOperationIsRetried(t *testing.T) {
 }
 
 func TestCreateFact(t *testing.T) {
+	pipelineName := "hf-bee-spring-boot-test-pr-5-3"
 	report := report.Report{
 		Counters: []report.Counter{
 			{
@@ -88,12 +90,14 @@ func TestCreateFact(t *testing.T) {
 	}
 
 	url := "http://dummy"
-	fact := createFact(report, url)
+	fact := createFact(report, pipelineName, url)
 
+	expectedName := fmt.Sprintf("%s-%s-%s", appName, jenkinsv1.FactTypeCoverage, pipelineName)
+	assert.Equal(t, expectedName, fact.Name)
 	assert.Equal(t, url, fact.Original.URL)
 	assert.Equal(t, jenkinsv1.FactTypeCoverage, fact.FactType)
 	assert.Len(t, fact.Measurements, 3)
-	assert.Contains(t, fact.Measurements, jenkinsv1.Measurement{Name: "Instructions-Coverage", MeasurementType: "percent", MeasurementValue: 90})
-	assert.Contains(t, fact.Measurements, jenkinsv1.Measurement{Name: "Instructions-Missed", MeasurementType: "percent", MeasurementValue: 10})
-	assert.Contains(t, fact.Measurements, jenkinsv1.Measurement{Name: "Instructions-Total", MeasurementType: "percent", MeasurementValue: 100})
+	assert.Contains(t, fact.Measurements, jenkinsv1.Measurement{Name: "Instructions-Coverage", MeasurementType: jenkinsv1.MeasurementCount, MeasurementValue: 90})
+	assert.Contains(t, fact.Measurements, jenkinsv1.Measurement{Name: "Instructions-Missed", MeasurementType: jenkinsv1.MeasurementCount, MeasurementValue: 10})
+	assert.Contains(t, fact.Measurements, jenkinsv1.Measurement{Name: "Instructions-Total", MeasurementType: jenkinsv1.MeasurementCount, MeasurementValue: 100})
 }

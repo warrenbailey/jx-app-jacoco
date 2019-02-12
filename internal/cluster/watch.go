@@ -18,8 +18,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	appName = "jacoco"
+)
+
 var (
-	logger = log.WithFields(log.Fields{"app": "jacoco"})
+	logger = log.WithFields(log.Fields{"app": appName})
 )
 
 // WatchPipelineActivity watches the jx namespace for changes to PipelineActivities.
@@ -57,7 +61,7 @@ func onPipelineActivity(obj interface{}, pipelineActivitiesGetter jenkinsclientv
 
 func handlePipelineActivity(pipelineActivity *jenkinsv1.PipelineActivity, pipelineActivitiesGetter jenkinsclientv1.PipelineActivitiesGetter) (err error) {
 	for _, attachment := range pipelineActivity.Spec.Attachments {
-		if attachment.Name != "jacoco" {
+		if attachment.Name != appName {
 			continue
 		}
 
@@ -75,9 +79,7 @@ func handlePipelineActivity(pipelineActivity *jenkinsv1.PipelineActivity, pipeli
 				continue
 			}
 
-			fact := createFact(report, url)
-
-			// retry fetch+update pipeline CRD as a whole
+			fact := createFact(report, pipelineActivity.Name, url)
 
 			err = updatePipelineActivity(pipelineActivity.Name, pipelineActivity.Namespace, fact, pipelineActivitiesGetter)
 			if err != nil {
@@ -100,6 +102,7 @@ func containsFactForURL(pipelineActivity *jenkinsv1.PipelineActivity, url string
 }
 
 func updatePipelineActivity(name string, namespace string, fact jenkinsv1.Fact, pipelineActivitiesGetter jenkinsclientv1.PipelineActivitiesGetter) error {
+	// retry fetch+update pipeline CRD as a whole
 	f := func() error {
 		pipelineActivity, err := pipelineActivitiesGetter.PipelineActivities(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
@@ -130,7 +133,7 @@ func indexOfJacocoCoverageFactType(pipelineActivity *jenkinsv1.PipelineActivity)
 	found := 0
 	index := -1
 	for i, fact := range pipelineActivity.Spec.Facts {
-		if fact.FactType == jenkinsv1.FactTypeCoverage && util.Contains(fact.Tags, "jacoco") {
+		if fact.FactType == jenkinsv1.FactTypeCoverage && util.Contains(fact.Tags, appName) {
 			found++
 			index = i
 		}
@@ -144,7 +147,7 @@ func indexOfJacocoCoverageFactType(pipelineActivity *jenkinsv1.PipelineActivity)
 	}
 }
 
-func createFact(report report.Report, url string) jenkinsv1.Fact {
+func createFact(report report.Report, pipelineName string, url string) jenkinsv1.Fact {
 	measurements := make([]jenkinsv1.Measurement, 0)
 	for _, c := range report.Counters {
 		t := ""
@@ -167,7 +170,9 @@ func createFact(report report.Report, url string) jenkinsv1.Fact {
 		measurementTotal := createMeasurement(t, jenkinsv1.CodeCoverageMeasurementTotal, c.Covered+c.Missed)
 		measurements = append(measurements, measurementCovered, measurementMissed, measurementTotal)
 	}
+
 	fact := jenkinsv1.Fact{
+		Name:     fmt.Sprintf("%s-%s-%s", appName, jenkinsv1.FactTypeCoverage, pipelineName),
 		FactType: jenkinsv1.FactTypeCoverage,
 		Original: jenkinsv1.Original{
 			URL:      url,
@@ -177,7 +182,7 @@ func createFact(report report.Report, url string) jenkinsv1.Fact {
 			},
 		},
 		Tags: []string{
-			"jacoco",
+			appName,
 		},
 		Measurements: measurements,
 		Statements:   []jenkinsv1.Statement{},
@@ -188,7 +193,7 @@ func createFact(report report.Report, url string) jenkinsv1.Fact {
 func createMeasurement(t string, measurement string, value int) jenkinsv1.Measurement {
 	return jenkinsv1.Measurement{
 		Name:             fmt.Sprintf("%s-%s", t, measurement),
-		MeasurementType:  "percent",
+		MeasurementType:  jenkinsv1.MeasurementCount,
 		MeasurementValue: value,
 	}
 }
