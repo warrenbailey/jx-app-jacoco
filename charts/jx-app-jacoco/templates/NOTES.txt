@@ -1,4 +1,21 @@
 
-Get the application URL by running these commands:
+To check the status of {{ .Chart.Name }}, try:
 
-kubectl get ingress {{ template "fullname" . }}
+    $ helm status {{ .Chart.Name }}
+
+Once 'jx get apps' (https://github.com/jenkins-x/jx/issues/2976) is implemented this can also be achieved using
+the jx CLI directly:
+
+    $ jx get app  {{ .Chart.Name }}
+
+Once installed {{ .Chart.Name }} will attach a JaCoCo code coverage fact to each PipelineActivity custom resource
+which has run the JaCoCo Maven Plug-in.
+
+You can get a list of the existing PipelineActivity custom resources via:
+
+    $ kubectl get act
+
+To inspect the attached coverage fact for a given PipelineActivity:
+
+    $ kubectl get act -o yaml <org>-<repo>-pr-<pull-request-number>-<build-number>
+
