@@ -51,7 +51,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		cluster.WatchPipelineActivity(done, ns, jxClient)
+		cluster.WatchPipelineActivity(done, ns, jxClient.RESTClient(), jxClient)
 		logger.Info("cluster activity monitor has shut down")
 		return
 	}()
