@@ -2,11 +2,13 @@ package cluster
 
 import (
 	"fmt"
+	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x-apps/jx-app-jacoco/internal/report"
 	"github.com/jenkins-x-apps/jx-app-jacoco/internal/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"time"
 
@@ -21,8 +23,8 @@ var (
 )
 
 // WatchPipelineActivity watches the jx namespace for changes to PipelineActivities.
-func WatchPipelineActivity(done chan struct{}, namespace string, jxClient *jenkinsclientv1.JenkinsV1Client) {
-	listWatch := cache.NewListWatchFromClient(jxClient.RESTClient(), "pipelineactivities", namespace, fields.Everything())
+func WatchPipelineActivity(done chan struct{}, namespace string, restClient rest.Interface, pipelineActivitiesGetter jenkinsclientv1.PipelineActivitiesGetter) {
+	listWatch := cache.NewListWatchFromClient(restClient, "pipelineactivities", namespace, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, actController := cache.NewInformer(
 		listWatch,
@@ -30,37 +32,37 @@ func WatchPipelineActivity(done chan struct{}, namespace string, jxClient *jenki
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				onPipelineActivity(obj, jxClient)
+				onPipelineActivity(obj, pipelineActivitiesGetter)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				onPipelineActivity(newObj, jxClient)
+				onPipelineActivity(newObj, pipelineActivitiesGetter)
 			},
 			DeleteFunc: func(obj interface{}) {},
 		},
 	)
-	go actController.Run(done)
+	actController.Run(done)
 }
 
-func onPipelineActivity(obj interface{}, jxClient *jenkinsclientv1.JenkinsV1Client) {
+func onPipelineActivity(obj interface{}, pipelineActivitiesGetter jenkinsclientv1.PipelineActivitiesGetter) {
 	pipelineActivity, ok := obj.(*jenkinsv1.PipelineActivity)
 	if !ok {
 		logger.Warnf("unexpected type %T", obj)
 	} else {
-		err := handlePipelineActivity(pipelineActivity, jxClient)
+		err := handlePipelineActivity(pipelineActivity, pipelineActivitiesGetter)
 		if err != nil {
 			logger.Error(err)
 		}
 	}
 }
 
-func handlePipelineActivity(pipelineActivity *jenkinsv1.PipelineActivity, jxClient *jenkinsclientv1.JenkinsV1Client) (err error) {
+func handlePipelineActivity(pipelineActivity *jenkinsv1.PipelineActivity, pipelineActivitiesGetter jenkinsclientv1.PipelineActivitiesGetter) (err error) {
 	for _, attachment := range pipelineActivity.Spec.Attachments {
 		if attachment.Name != "jacoco" {
 			continue
 		}
 
-		// TODO Handle having multiple attachments properly
 		for _, url := range attachment.URLs {
+			//  append version string to report URL to avoid any caching issues when retrieving the report
 			urlWithTimestamp := fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond))
 
 			if containsFactForURL(pipelineActivity, url) {
@@ -74,7 +76,15 @@ func handlePipelineActivity(pipelineActivity *jenkinsv1.PipelineActivity, jxClie
 			}
 
 			fact := createFact(report, url)
-			updatePipelineActivity(pipelineActivity.Name, pipelineActivity.Namespace, fact, jxClient)
+
+			// retry fetch+update pipeline CRD as a whole
+
+			err = updatePipelineActivity(pipelineActivity.Name, pipelineActivity.Namespace, fact, pipelineActivitiesGetter)
+			if err != nil {
+				logger.Errorf("error updating PipelineActivity %s: %s", pipelineActivity.Name, err)
+			} else {
+				logger.Infof("successfully updated PipelineActivity %s with data from %s", pipelineActivity.Name, fact.Original.URL)
+			}
 		}
 	}
 	return nil
@@ -89,50 +99,31 @@ func containsFactForURL(pipelineActivity *jenkinsv1.PipelineActivity, url string
 	return false
 }
 
-func updatePipelineActivity(name string, namespace string, fact jenkinsv1.Fact, jxClient *jenkinsclientv1.JenkinsV1Client) {
-	var pipelineActivity *jenkinsv1.PipelineActivity
-	var err error
-	// re-get the pipeline activity
+func updatePipelineActivity(name string, namespace string, fact jenkinsv1.Fact, pipelineActivitiesGetter jenkinsclientv1.PipelineActivitiesGetter) error {
 	f := func() error {
-		pipelineActivity, err = jxClient.PipelineActivities(namespace).Get(name, metav1.GetOptions{})
+		pipelineActivity, err := pipelineActivitiesGetter.PipelineActivities(namespace).Get(name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		found, index, err := indexOfJacocoCoverageFactType(pipelineActivity)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
+
+		if found {
+			pipelineActivity.Spec.Facts[index] = fact
+		} else {
+			pipelineActivity.Spec.Facts = append(pipelineActivity.Spec.Facts, fact)
+		}
+
+		_, err = pipelineActivitiesGetter.PipelineActivities(pipelineActivity.Namespace).Update(pipelineActivity)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-
-	err = util.ApplyWithBackoff(f)
-	if err != nil {
-		logger.Errorf("error retrieving PipelineActivity %s with uuid %s for update: %s", pipelineActivity.Name, pipelineActivity.UID, err)
-		return
-	}
-
-	found, index, err := indexOfJacocoCoverageFactType(pipelineActivity)
-	if err != nil {
-		logger.Error(err)
-	}
-
-	if found {
-		// Updating the existing jacoco report with the new one. Is this what we want? (HF)
-		pipelineActivity.Spec.Facts[index] = fact
-	} else {
-		pipelineActivity.Spec.Facts = append(pipelineActivity.Spec.Facts, fact)
-	}
-
-	// update the pipeline CRD
-	f = func() error {
-		_, err = jxClient.PipelineActivities(pipelineActivity.Namespace).Update(pipelineActivity)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	err = util.ApplyWithBackoff(f)
-	if err != nil {
-		logger.Errorf("error updating PipelineActivity %s: %s", pipelineActivity.Name, err)
-	} else {
-		logger.Infof("successfully updated PipelineActivity %s with data from %s", pipelineActivity.Name, fact.Original.URL)
-	}
+	return util.ApplyWithBackoff(f)
 }
 
 func indexOfJacocoCoverageFactType(pipelineActivity *jenkinsv1.PipelineActivity) (bool, int, error) {
