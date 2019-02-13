@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+OS := $(shell uname)
 
 GO_VARS := GO111MODULE=on GO15VENDOREXPERIMENT=1 CGO_ENABLED=0
 BUILDFLAGS := ''
@@ -12,9 +13,11 @@ PKGS := $(subst  :,_,$(PACKAGE_DIRS))
 PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 
-# setting some defaults for skaffold 
-DOCKER_REGISTRY ?= localhost:5000
-VERSION ?= latest
+VERSION ?= $(shell cat VERSION)
+
+# setting some defaults for skaffold
+DOCKER_REGISTRY ?= $(shell kubectl get service jenkins-x-docker-registry -o go-template --template='{{index .metadata.annotations "fabric8.io/exposeUrl"}}' |  sed 's/http:\/\///')
+JENKINS_X_DOCKER_REGISTRY_INTERNAL ?= $(shell kubectl get service jenkins-x-docker-registry -o go-template --template="{{.spec.clusterIP}}":5000)
 
 FGT := $(GOPATH)/bin/fgt
 GOLINT := $(GOPATH)/bin/golint
@@ -50,15 +53,36 @@ watch: ## Watches for file changes in Go source files and re-runs 'skaffold buil
 
 .PHONY: skaffold-build
 skaffold-build: linux ## Runs 'skaffold build'
-	DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold build -f skaffold.yaml
+	JENKINS_X_DOCKER_REGISTRY_INTERNAL=$(JENKINS_X_DOCKER_REGISTRY_INTERNAL) DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold build -f skaffold.yaml
 
 .PHONY: skaffold-run
 skaffold-run: linux ## Runs 'skaffold run'
-	DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold run -f skaffold.yaml -p dev 
+	JENKINS_X_DOCKER_REGISTRY_INTERNAL=$(JENKINS_X_DOCKER_REGISTRY_INTERNAL) DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold run -f skaffold.yaml -p dev
 
 .PHONY: help
 help: ## Prints this help
 	@grep -E '^[^.]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-40s\033[0m %s\n", $$1, $$2}'	
+
+.PHONY: update-release-version
+update-release-version: ## Updates the release version
+ifeq ($(OS),Darwin)
+	sed -i "" -e "s/version:.*/version: $(VERSION)/" ./charts/jx-app-jacoco/Chart.yaml
+	sed -i "" -e "s/tag: .*/tag: $(VERSION)/" ./charts/jx-app-jacoco/values.yaml
+else ifeq ($(OS),Linux)
+	sed -i -e "s/version:.*/version: $(VERSION)/" ./charts/jx-app-jacoco/Chart.yaml
+	sed -i -e "s/tag: .*/tag: $(VERSION)/" ./charts/jx-app-jacoco/values.yaml
+else
+	echo "platform $(OS) not supported to tag with"
+	exit -1
+endif
+
+.PHONY: release-branch
+release-branch: update-release-version ## Creates release branch and pushes release
+	git checkout -b release-v$(VERSION)
+	git add --all
+	git commit -m "release $(VERSION)" --allow-empty # if first release then no version update is performed
+	git tag -fa v$(VERSION) -m "Release version $(VERSION)"
+	git push origin HEAD v$(VERSION)
 
 # Targets to get some Go tools
 $(FGT):

@@ -3,9 +3,9 @@ kind: Config
 build:
   tagPolicy:
     envTemplate:
-      template: "{{.DOCKER_REGISTRY}}/jenkins-x-apps/jx-app-jacoco:{{.VERSION}}"
+      template: "{{.DOCKER_REGISTRY}}/{{.IMAGE_NAME}}:{{.VERSION}}"
   artifacts:
-  - imageName: jenkins-x-apps/jx-app-jacoco
+  - imageName: jenkinsxio/jx-app-jacoco
     workspace: .
     docker: {}
   local: {}
@@ -17,15 +17,14 @@ profiles:
   build:
     tagPolicy:
       envTemplate:
-        template: "{{.DOCKER_REGISTRY}}/jenkins-x-apps/jx-app-jacoco:{{.DIGEST_HEX}}"
+        template: "{{.DOCKER_REGISTRY}}/{{.IMAGE_NAME}}:{{.DIGEST_HEX}}"
     artifacts:
-    - docker: {}
-    local: {}
+    - imageName: jenkinsxio/jx-app-jacoco
   deploy:
     helm:
       releases:
       - name: jx-app-jacoco
         chartPath: charts/jx-app-jacoco
         setValueTemplates:
-          image.repository: "{{.DOCKER_REGISTRY}}/jenkins-x-apps/jx-app-jacoco"
+          image.repository: "{{.JENKINS_X_DOCKER_REGISTRY_INTERNAL}}/{{.IMAGE_NAME}}"
           image.tag: "{{.DIGEST_HEX}}"
