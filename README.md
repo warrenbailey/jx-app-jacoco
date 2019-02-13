@@ -1,6 +1,6 @@
 # jx-app-jacoco
 
-jx-app-jacoco provides a means for transferring a Jacoco XML code coverage report from a [Jenkins X](https://jenkins-x.github.io/jenkins-x-website/) build to a `Fact` in the `PipelineActivity` custom resource.
+jx-app-jacoco provides a means for transferring a JaCoCo XML code coverage report from a [Jenkins X](https://jenkins-x.github.io/jenkins-x-website/) build to a `Fact` in the `PipelineActivity` custom resource.
 
 You must have a Jenkins X cluster to install and use the jx-app-jacoco app.
 If you do not have a Jenkins X cluster and you would like to try it out, the [Jenkins X Google Cloud Tutorials](https://jenkins-x.io/getting-started/tutorials/) is a great place to start.
@@ -15,14 +15,19 @@ $ jx add app jx-app-jacoco --repository "http://chartmuseum.jenkins-x.io"
 
 NOTE: The syntax of this command is evolving and will change.
 
-Upon successful installation, you should see jx-app-jacoco in the list of pods (`kubectl get pods`) running in your cluster - it will be called `jx-app-jacoco-jx-app-jacoco`.
+After the installation, you can view the status of jx-app-jacoco via:
+
+```bash
+$ helm status jx-app-jacoco
+```
+
+The jx-app-jacoco shows also in the list of running pods via `kubectl get pods`.
                                                                                                         
-NOTE: The name repetition is a typical pattern in Helm.
 
 ## Usage
 
 The current usage of jx-app-jacoco is limited to Maven projects.
-You must configure the build section of your Maven POM file for Jacoco to generate an XML report in addition to the default jacoco.exec file.
+You must configure the build section of your Maven POM file for JaCoCo to generate an XML report in addition to the default jacoco.exec file.
 
 Example Maven POM file:
 
@@ -58,7 +63,7 @@ Example Maven POM file:
 ```
 NOTE: We have an open issue to not have to generate the XML report in the project.
 
-Ensure that your _Jenkinsfile_ includes the following command, so the Jacoco XML report is stored for later retrieval by this app.
+Ensure that your _Jenkinsfile_ includes the following command, so the JaCoCo XML report is stored for later retrieval by this app.
 
 ```bash
 sh "jx step stash --pattern=target/site/jacoco/jacoco.xml --classifier=jacoco"
@@ -71,10 +76,10 @@ sh "mvn install"
 sh "jx step stash --pattern=target/site/jacoco/jacoco.xml --classifier=jacoco"
 ```
 
-Jacoco code coverage facts will now be stored in the PipelineActivity custom resource for each build.
+JaCoCo code coverage facts will now be stored in the PipelineActivity custom resource for each build.
 
 ```
-$ kubectl get act -o yaml <org>-<repo>-pr-<pull request number>-<build-number>
+$ kubectl get act -o yaml <org>-<repo>-pr-<pull-request-number>-<build-number>
 ```
 
 ```yaml
@@ -167,7 +172,7 @@ $ make clean
 ### Testing a development version of the app
 
 * Install a JenkinsX dev cluster - see [`jx cluster create`](https://jenkins-x.io/getting-started/install/)
-* Install the latest jacoco app 
+* Install the latest JaCoCo app 
    ```bash
    $ jx add app jx-app-jacoco --repository "http://chartmuseum.jenkins-x.io"
    ```

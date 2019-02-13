@@ -9,3 +9,7 @@ work
 bin/
 tmp/
 build/
+
+# artifacts not to be committed
+VERSION
+charts/jx-app-jacoco/*.tgz
