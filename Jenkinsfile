@@ -64,7 +64,7 @@ pipeline {
             sh 'jx step helm release'
           }
           dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
-            sh 'jx step changelog --version v\$(cat VERSION) -p \$(git for-each-ref --sort=-creatordate --format="%(objectname)" refs/tags | sed -n 2p) -r \$(git for-each-ref  --sort=-creatordate --format="%(objectname)" refs/tags | sed -n 1p)'
+            sh 'jx step changelog --version v\$(cat VERSION) -p \$(git merge-base \$(git for-each-ref --sort=-creatordate --format="%(objectname)" refs/tags | sed -n 2p) master) -r \$(git merge-base \$(git for-each-ref --sort=-creatordate --format="%(objectname)" refs/tags | sed -n 1p) master)'
             // disabling 'jx create version pr' until builder images contains this command (HF)
             // sh 'jx step create version pr -n $GITHUB_ORG/$APP_NAME -v $(cat VERSION)'
           }
