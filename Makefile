@@ -21,6 +21,7 @@ JENKINS_X_DOCKER_REGISTRY_INTERNAL ?= $(shell kubectl get service jenkins-x-dock
 
 FGT := $(GOPATH)/bin/fgt
 GOLINT := $(GOPATH)/bin/golint
+GOMMIT := $(GOPATH)/bin/gommit
 
 .PHONY : all
 all: linux test check ## Compiles, test and verifies source
@@ -41,11 +42,13 @@ fmt: ## Re-formates Go source files according to standard
 clean: ## Deletes the build directory with all generated artefacts
 	rm -rf $(BUILD_DIR)
 
-check: $(GOLINT) $(FGT)
+check: $(GOLINT) $(FGT) $(GOMMIT)
 	@echo "LINTING"
 	@$(FGT) $(GOLINT) $(PACKAGE_DIRS)
 	@echo "VETTING"
 	@$(GO_VARS) $(FGT) go vet $(PACKAGE_DIRS)
+	@echo "CONVENTIONAL COMMIT CHECK"
+	@$(GOMMIT) check range b8bd5cee284f53bdce74dc95e3254ea7276da9df HEAD
 
 .PHONY: watch
 watch: ## Watches for file changes in Go source files and re-runs 'skaffold build'. Requires entr
@@ -90,3 +93,6 @@ $(FGT):
 
 $(GOLINT):
 	@$(GO_VARS) go get github.com/golang/lint/golint
+
+$(GOMMIT):
+	@$(GO_VARS) go get github.com/antham/gommit
