@@ -26,5 +26,5 @@ profiles:
       - name: jx-app-jacoco
         chartPath: charts/jx-app-jacoco
         setValueTemplates:
-          image.repository: "{{.JENKINS_X_DOCKER_REGISTRY_INTERNAL}}/{{.IMAGE_NAME}}"
+          image.repository: "{{.DOCKER_REGISTRY}}/{{.IMAGE_NAME}}"
           image.tag: "{{.DIGEST_HEX}}"

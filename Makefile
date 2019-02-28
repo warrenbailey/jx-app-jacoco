@@ -14,10 +14,7 @@ PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 
 VERSION ?= $(shell cat VERSION)
-
-# setting some defaults for skaffold
-DOCKER_REGISTRY ?= $(shell kubectl get service jenkins-x-docker-registry -o go-template --template='{{index .metadata.annotations "fabric8.io/exposeUrl"}}' |  sed 's/http:\/\///')
-JENKINS_X_DOCKER_REGISTRY_INTERNAL ?= $(shell kubectl get service jenkins-x-docker-registry -o go-template --template="{{.spec.clusterIP}}":5000)
+DOCKER_REGISTRY ?= docker.io
 
 FGT := $(GOPATH)/bin/fgt
 GOLINT := $(GOPATH)/bin/golint
@@ -56,15 +53,20 @@ watch: ## Watches for file changes in Go source files and re-runs 'skaffold buil
 
 .PHONY: skaffold-build
 skaffold-build: linux ## Runs 'skaffold build'
-	JENKINS_X_DOCKER_REGISTRY_INTERNAL=$(JENKINS_X_DOCKER_REGISTRY_INTERNAL) DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold build -f skaffold.yaml
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold build -f skaffold.yaml
 
 .PHONY: skaffold-run
 skaffold-run: linux ## Runs 'skaffold run'
-	JENKINS_X_DOCKER_REGISTRY_INTERNAL=$(JENKINS_X_DOCKER_REGISTRY_INTERNAL) DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold run -f skaffold.yaml -p dev
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) VERSION=$(VERSION) skaffold run -f skaffold.yaml -p dev
 
 .PHONY: help
 help: ## Prints this help
 	@grep -E '^[^.]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-40s\033[0m %s\n", $$1, $$2}'	
+
+.PHONY: release
+release: linux test check update-release-version skaffold-build release-branch ## Creates a release
+	cd charts/jx-app-jacoco && jx step helm release
+	jx step changelog --version v$(cat VERSION) -p $$(git merge-base $$(git for-each-ref --sort=-creatordate --format='%(objectname)' refs/tags | sed -n 2p) master) -r $$(git merge-base $$(git for-each-ref --sort=-creatordate --format='%(objectname)' refs/tags | sed -n 1p) master)
 
 .PHONY: update-release-version
 update-release-version: ## Updates the release version
@@ -80,7 +82,7 @@ else
 endif
 
 .PHONY: release-branch
-release-branch: update-release-version ## Creates release branch and pushes release
+release-branch:  ## Creates release branch and pushes release
 	git checkout -b release-v$(VERSION)
 	git add --all
 	git commit -m "release $(VERSION)" --allow-empty # if first release then no version update is performed
