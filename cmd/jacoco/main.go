@@ -39,7 +39,6 @@ func main() {
 
 	var wg sync.WaitGroup
 	done := make(chan struct{})
-	defer close(done)
 
 	wg.Add(1)
 	go func() {
@@ -99,6 +98,6 @@ func setupSignalChannel(done chan struct{}) {
 		logger.Info("waiting for shutdown signal in the background")
 		<-sigChan
 		logger.Info("received SIGTERM signal - initiating shutdown")
-		done <- struct{}{}
+		close(done)
 	}()
 }
