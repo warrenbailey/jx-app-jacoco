@@ -1,7 +1,10 @@
 module github.com/jenkins-x-apps/jx-app-jacoco
 
 require (
+	github.com/GeertJohan/fgt v0.0.0-20160120143236-262f7b11eec0 // indirect
+	github.com/antham/gommit v2.2.0+incompatible // indirect
 	github.com/cenkalti/backoff v2.0.0+incompatible
+	github.com/dlclark/regexp2 v1.1.6 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.2

@@ -25,6 +25,8 @@ github.com/Azure/go-autorest v10.15.5+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxS
 github.com/BurntSushi/toml v0.3.0 h1:e1/Ivsx3Z0FVTV0NSOv/aVgbUWyQuzj7DDnFblkRvsY=
 github.com/BurntSushi/toml v0.3.0/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
+github.com/GeertJohan/fgt v0.0.0-20160120143236-262f7b11eec0 h1:onmsMcmF/EIYUxqy4bWwV/tmPhJx6Y3bBNlnwANFhS4=
+github.com/GeertJohan/fgt v0.0.0-20160120143236-262f7b11eec0/go.mod h1:VTH/oZwsQNNdzVhP2R366GZGFfksyOchw5rcIj2QpLI=
 github.com/GoogleCloudPlatform/cloudsql-proxy v0.0.0-20181009230506-ac834ce67862/go.mod h1:aJ4qN3TfrelA6NZ6AXsXRfmEVaYin3EDbSPJrKS8OXo=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2 h1:XCMASpjZLfZHpFKaNYZkb5lNcnXBQvc5J/1K/FKeVTU=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2/go.mod h1:gPJbH1etcDj7qS/hBRiLuYW9CY0bRcostSKusa51xR0=
@@ -64,6 +66,8 @@ github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYU
 github.com/antham/chyle v1.4.0 h1:RBCXpnmj3Wcl43bKbcuRU3LXkarhYwSigWAPUyWEjvY=
 github.com/antham/chyle v1.4.0/go.mod h1:D94Z4aE/ECudyNoTHwkhqu77mjGPZtfPG8dNoeIG9CU=
 github.com/antham/envh v1.2.0/go.mod h1:ocIRPHuwwjyBVBtuUJOJc2TYzGg+d23xSAZexl4y9hQ=
+github.com/antham/gommit v2.2.0+incompatible h1:Ac1HJy4lRys9EQpMGxFgZ5N0gjMPcjjDZoya36sarzA=
+github.com/antham/gommit v2.2.0+incompatible/go.mod h1:0tsgKbdYqAuXVvPujIBI3NWPnbLFaddaxFwYTfDOmvA=
 github.com/antham/strumt v0.0.0-20171215230529-6776189777d3/go.mod h1:sE7EYIUE0nQzPiv5zQAmw2aVkei0j2xmb4gTIIqSFSI=
 github.com/aokoli/goutils v1.0.1/go.mod h1:SijmP0QR8LtwsmDs8Yii5Z/S4trXFGFC2oO5g9DP+DQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
@@ -133,6 +137,8 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZm
 github.com/disintegration/imaging v1.4.2 h1:BSVxoYQ2NfLdvIGCDD8GHgBV5K0FCEsc0d/6FxQII3I=
 github.com/disintegration/imaging v1.4.2/go.mod h1:9B/deIUIrliYkyMTuXJd6OUFLcrZ2tf+3Qlwnaf/CjU=
 github.com/djherbis/atime v1.0.0/go.mod h1:5W+KBIuTwVGcqjIfaTwt+KSYX1o6uep8dtevevQP/f8=
+github.com/dlclark/regexp2 v1.1.6 h1:CqB4MjHw0MFCDj+PHHjiESmHX+N7t0tJzKvC6M97BRg=
+github.com/dlclark/regexp2 v1.1.6/go.mod h1:2pZnwuY/m+8K6iRw6wQdMtk+rH5tNGR1i55kozfMjCc=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
 github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v0.0.0-20171206114025-5e5fadb3c020/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
