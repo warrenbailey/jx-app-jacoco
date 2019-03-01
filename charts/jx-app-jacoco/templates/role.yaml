@@ -11,7 +11,16 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - jenkins.io
+  resources:
+  - facts
+  verbs:
+  - get
+  - list
+  - watch
   - update
+  - create
 - apiGroups:
   - ""
   resources:

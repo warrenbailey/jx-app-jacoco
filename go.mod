@@ -1,11 +1,12 @@
 module github.com/jenkins-x-apps/jx-app-jacoco
 
 require (
+	github.com/bxcodec/faker v2.0.1+incompatible
 	github.com/cenkalti/backoff v2.0.0+incompatible
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.2
-	github.com/jenkins-x/jx v1.3.844
+	github.com/jenkins-x/jx v1.3.928
 	github.com/magiconair/properties v1.8.0
 	github.com/pkg/errors v0.8.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5 // indirect

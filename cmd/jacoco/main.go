@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"github.com/jenkins-x-apps/jx-app-jacoco/internal/cluster"
-	"github.com/jenkins-x-apps/jx-app-jacoco/internal/util"
-	jenkinsclientv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x-apps/jx-app-jacoco/internal/config"
+	"github.com/jenkins-x-apps/jx-app-jacoco/internal/logging"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/client-go/rest"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,7 +14,9 @@ import (
 	"syscall"
 )
 
-var logger = log.WithFields(log.Fields{"app": "jacoco"})
+var (
+	logger = logging.AppLogger().WithFields(log.Fields{"component": "main"})
+)
 
 func init() {
 	// Output to stdout instead of the default stderr
@@ -23,19 +25,21 @@ func init() {
 }
 
 func main() {
-	// creates the in-cluster config
-	config, err := rest.InClusterConfig()
+	// Init configuration
+	config, err := config.NewConfiguration()
 	if err != nil {
-		logger.Fatalf("unable to create in cluster config: %s", err)
+		logger.Fatal(err)
 	}
+	logger.Infof("starting %s with config: %s", logging.AppName, config)
 
-	jxClient, err := jenkinsclientv1.NewForConfig(config)
+	// configure the Logger
+	logging.SetLevel(config.Level())
+
+	factory := clients.NewFactory()
+	jxClient, _, err := factory.CreateJXClient()
 	if err != nil {
-		logger.Fatalf("unable to create Jenkins client: %s", err)
+		logger.Fatal(err)
 	}
-
-	ns := util.TeamNameSpace()
-	logger.Infof("watching namespace %s", ns)
 
 	var wg sync.WaitGroup
 	done := make(chan struct{})
@@ -50,8 +54,16 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		cluster.WatchPipelineActivity(done, ns, jxClient.RESTClient(), jxClient)
-		logger.Info("cluster activity monitor has shut down")
+		eventHandler, err := cluster.NewEventHandler(jxClient, config)
+		if err != nil {
+			logger.Errorf("error creating event handler: %s", err)
+			done <- struct{}{}
+			return
+		}
+		logger.Info("starting event handler for pipelineactivites")
+		eventHandler.Start(done)
+
+		logger.Info("event handler has shut down")
 		return
 	}()
 

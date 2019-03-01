@@ -2,9 +2,9 @@ package report
 
 import (
 	"encoding/xml"
-	"github.com/jenkins-x-apps/jx-app-jacoco/internal/util"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"time"
 )
 
@@ -14,14 +14,14 @@ var (
 )
 
 type retriever interface {
-	getRawReport(url string) ([]byte, error)
+	getRawReport(namespace string, url string) ([]byte, error)
 }
 
 type defaultRetriever struct {
 }
 
-func (r *defaultRetriever) getRawReport(url string) ([]byte, error) {
-	common := cmd.NewCommonOptions(util.TeamNameSpace(), cmd.NewFactory())
+func (r *defaultRetriever) getRawReport(namepace string, url string) ([]byte, error) {
+	common := cmd.NewCommonOptions(namepace, clients.NewFactory())
 
 	authSvc, err := common.CreateGitAuthConfigService()
 	if err != nil {
@@ -36,9 +36,9 @@ func (r *defaultRetriever) getRawReport(url string) ([]byte, error) {
 	return data, nil
 }
 
-// RetrieveReport retrieves a Jacoco report from the specified URL which can be on GitHub or a cloud storage bucket.
-func RetrieveReport(url string) (Report, error) {
-	rawReport, err := r.getRawReport(url)
+// RetrieveReport retrieves a JaCoCo report from the specified URL which can be on GitHub or a cloud storage bucket.
+func RetrieveReport(namespace string, url string) (Report, error) {
+	rawReport, err := r.getRawReport(namespace, url)
 	if err != nil {
 		return Report{}, err
 	}

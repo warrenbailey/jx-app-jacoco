@@ -10,14 +10,14 @@ import (
 type errorThrowingRetriever struct {
 }
 
-func (r *errorThrowingRetriever) getRawReport(url string) ([]byte, error) {
+func (r *errorThrowingRetriever) getRawReport(namespace string, url string) ([]byte, error) {
 	return nil, errors.New("Unable to retrieve report")
 }
 
 type fixtureRetriever struct {
 }
 
-func (r *fixtureRetriever) getRawReport(url string) ([]byte, error) {
+func (r *fixtureRetriever) getRawReport(namespace string, url string) ([]byte, error) {
 	data, err := ioutil.ReadFile("testdata/jacoco.xml")
 	return data, err
 }
@@ -29,7 +29,7 @@ func TestRetrieveReportWithError(t *testing.T) {
 	}()
 	r = &errorThrowingRetriever{}
 
-	report, err := RetrieveReport("http://foo.bar/jacoco.xml")
+	report, err := RetrieveReport("jx", "http://foo.bar/jacoco.xml")
 	assert.Error(t, err)
 	assert.Equal(t, "Unable to retrieve report", err.Error())
 	assert.Equal(t, Report{}, report)
@@ -42,7 +42,7 @@ func TestRetrieveReportSuccess(t *testing.T) {
 	}()
 	r = &fixtureRetriever{}
 
-	report, err := RetrieveReport("http://foo.bar/jacoco.xml")
+	report, err := RetrieveReport("jx", "http://foo.bar/jacoco.xml")
 	assert.NoError(t, err)
 	assert.Equal(t, "demo", report.Name)
 }

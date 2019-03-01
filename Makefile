@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-OS := $(shell uname)
+OS := $(shell uname | tr '[:upper:]' '[:lower:]')
 
 GO_VARS := GO111MODULE=on GO15VENDOREXPERIMENT=1 CGO_ENABLED=0
 BUILDFLAGS := ''
@@ -15,6 +15,8 @@ os = $(word 1, $@)
 
 VERSION ?= $(shell cat VERSION)
 DOCKER_REGISTRY ?= docker.io
+
+GOMMIT_START_SHA ?= 01b8d360a549e0a80b9fc9c587b69bba616e8d85
 
 FGT := $(GOPATH)/bin/fgt
 GOLINT := $(GOPATH)/bin/golint
@@ -45,7 +47,11 @@ check: $(GOLINT) $(FGT) $(GOMMIT)
 	@echo "VETTING"
 	@$(GO_VARS) $(FGT) go vet $(PACKAGE_DIRS)
 	@echo "CONVENTIONAL COMMIT CHECK"
-	@$(GOMMIT) check range b8bd5cee284f53bdce74dc95e3254ea7276da9df HEAD
+	@$(GOMMIT) check range $(GOMMIT_START_SHA) $$(git log --pretty=format:'%H' -n 1)
+
+.PHONY : run
+run: $(OS) ## Runs the app locally
+	$(BUILD_DIR)/$(APP_NAME)
 
 .PHONY: watch
 watch: ## Watches for file changes in Go source files and re-runs 'skaffold build'. Requires entr
@@ -70,10 +76,10 @@ release: linux test check update-release-version skaffold-build release-branch #
 
 .PHONY: update-release-version
 update-release-version: ## Updates the release version
-ifeq ($(OS),Darwin)
+ifeq ($(OS),darwin)
 	sed -i "" -e "s/version:.*/version: $(VERSION)/" ./charts/jx-app-jacoco/Chart.yaml
 	sed -i "" -e "s/tag: .*/tag: $(VERSION)/" ./charts/jx-app-jacoco/values.yaml
-else ifeq ($(OS),Linux)
+else ifeq ($(OS),linux)
 	sed -i -e "s/version:.*/version: $(VERSION)/" ./charts/jx-app-jacoco/Chart.yaml
 	sed -i -e "s/tag: .*/tag: $(VERSION)/" ./charts/jx-app-jacoco/values.yaml
 else

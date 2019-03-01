@@ -18,8 +18,8 @@ pipeline {
         steps {
           dir ('/home/jenkins/go/src/github.com/jenkins-x-apps/jx-app-jacoco') {
             checkout scm
-            sh "make linux test check"
-            sh 'export VERSION=$PREVIEW_VERSION && make skaffold-build'
+            sh "git fetch --unshallow"
+            sh "make linux test check GOMMIT_START_SHA=$PULL_BASE_SHA"
           }
         }
       }
