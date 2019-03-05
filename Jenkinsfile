@@ -34,7 +34,7 @@ pipeline {
             sh "git config --global credential.helper store"
             sh "jx step git credentials"
             sh "echo \$(jx-release-version) > VERSION"
-            sh "make release"
+            sh "make release DOCKER_REGISTRY=docker.io"
           }
         }
       }
