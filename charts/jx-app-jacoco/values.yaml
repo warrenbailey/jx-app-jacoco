@@ -4,7 +4,7 @@
 replicaCount: 1
 image:
   repository: jenkinsxio/jx-app-jacoco
-  tag: latest
+  tag: 0.0.119
   pullPolicy: IfNotPresent
 service:
   name: jx-app-jacoco
