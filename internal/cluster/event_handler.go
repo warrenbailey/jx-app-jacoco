@@ -171,6 +171,10 @@ func (h *defaultEventHandler) createFact(report report.Report, pipelineActivity 
 	fact := jenkinsv1.Fact{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			Labels: map[string]string{
+				"subjectkind": "PipelineActivity",
+				"pipelineName": pipelineActivity.Name,
+			},
 		},
 		Spec: jenkinsv1.FactSpec{
 			Name:     name,
