@@ -45,7 +45,6 @@ The following table lists the configurable parameters of the App their default v
 
 | Parameter                  | Description                                    | Default   |
 |----------------------------|------------------------------------------------|-----------|
-| teamNamespace              | The namespace to watch for pipeline activities | jx        |
 | logLevel                   | Log level ([trace|debug|info|warn|error])      | info      |
 
 ## Usage
