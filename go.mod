@@ -1,8 +1,11 @@
 module github.com/jenkins-x-apps/jx-app-jacoco
 
 require (
+	github.com/GeertJohan/fgt v0.0.0-20160120143236-262f7b11eec0 // indirect
+	github.com/antham/gommit v2.2.0+incompatible // indirect
 	github.com/bxcodec/faker v2.0.1+incompatible
 	github.com/cenkalti/backoff v2.0.0+incompatible
+	github.com/dlclark/regexp2 v1.1.6 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.2
@@ -13,6 +16,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/viper v1.3.1 // indirect
 	github.com/stretchr/testify v1.3.0
+	golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3 // indirect
 	k8s.io/api v0.0.0-20190126160303-ccdd560a045f
 	k8s.io/apiextensions-apiserver v0.0.0-20181128195303-1f84094d7e8e
 	k8s.io/apimachinery v0.0.0-20190122181752-bebe27e40fb7

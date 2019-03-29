@@ -100,7 +100,7 @@ $(FGT):
 	@$(GO_VARS) go get github.com/GeertJohan/fgt
 
 $(GOLINT):
-	@$(GO_VARS) go get github.com/golang/lint/golint
+	@$(GO_VARS) go get golang.org/x/lint/golint
 
 $(GOMMIT):
 	@$(GO_VARS) go get github.com/antham/gommit
