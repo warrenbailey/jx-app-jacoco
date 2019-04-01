@@ -63,6 +63,10 @@ func (m *mockFactInterface) Patch(name string, pt types.PatchType, data []byte, 
 	return nil, errors.New("not implemented")
 }
 
+func (m *mockFactInterface) PatchUpdate(*jenkinsv1.Fact) (*jenkinsv1.Fact, error) {
+	return nil, nil
+}
+
 func TestUpdatePipelineUpdateOperationIsRetried(t *testing.T) {
 	mock := &mockFactInterface{}
 	handler := defaultEventHandler{}
