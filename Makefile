@@ -13,7 +13,6 @@ PKGS := $(subst  :,_,$(PACKAGE_DIRS))
 PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 
-VERSION ?= $(shell cat VERSION)
 DOCKER_REGISTRY ?= docker.io
 
 GOMMIT_START_SHA ?= 01b8d360a549e0a80b9fc9c587b69bba616e8d85
