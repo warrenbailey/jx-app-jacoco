@@ -11,6 +11,8 @@ approvers:
 - sdeyris
 - snoopdave
 - vlatombe
+- cagiti
+- warrenbailey
 reviewers:
 - davidcurrie
 - fdonze
@@ -24,3 +26,5 @@ reviewers:
 - sdeyris
 - snoopdave
 - vlatombe
+- cagiti
+- warrenbailey
